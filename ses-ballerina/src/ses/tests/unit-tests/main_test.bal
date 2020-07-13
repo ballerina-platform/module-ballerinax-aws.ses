@@ -86,7 +86,6 @@ function testCreateTemplate() {
     }
 }
 
-// TODO add map<string>
 @test:Config {
     dependsOn: ["testCreateTemplate"],
     groups: ["group2"]
