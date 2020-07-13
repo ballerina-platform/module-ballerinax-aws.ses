@@ -116,8 +116,8 @@ public type Client client object {
     # https://docs.aws.amazon.com/ses/latest/APIReference/API_SendBulkTemplatedEmail.html
     # ```ballerina
     # string|ses:Error result = 
-    #   sesClient->sendTemplatedEmail(defaultTemplateData, destinations,
-    #                                     "a@bcd.com", templateJson1);
+    #   sesClient->sendTemplatedEmail("a@bcd.com", templateJson1, destinations,
+    #                                 defaultTemplateData);
     # ```
     #
     # + 'source - The email address that is sending the email. This email
