@@ -49,10 +49,10 @@ A client can create a template for emails in `AWS SES` as follows.
 
 ```ballerina 
 ses:Template template = {
-    TemplateName:"MyTemplate",
-    SubjectPart: "Greetings, {{name}}!",
-    TextPart: "Dear {{name}},\r\nYour favorite animal is {{favoriteanimal}}.",
-    HtmlPart: "<h1>Hello {{name}}</h1><p>Your favorite animal is {{favoriteanimal}}.</p>"
+    templateName:"MyTemplate",
+    subjectPart: "Greetings, {{name}}!",
+    textPart: "Dear {{name}},\r\nYour favorite animal is {{favoriteanimal}}.",
+    htmlPart: "<h1>Hello {{name}}</h1><p>Your favorite animal is {{favoriteanimal}}.</p>"
 };
 error? response = sesClient->createTemplate(template);
 if (response is error) {
@@ -63,15 +63,15 @@ if (response is error) {
 A client can send an email using an already created template via REST API as follows.
 
 ```ballerina 
-string defaultTemplateData = "{ \"name\":\"friend\", \"favoriteanimal\":\"unknown\" }";
+map<string> defaultTemplateData = {name:"friend", favoriteanimal:"unknown"};
 ses:BulkEmailDestination[] destinations = [
     {
         destination: {to:["to@example.com"]},
-        replacementTemplateData: "{ \"name\":\"Donald\", \"favoriteanimal\":\"duck\" }"
+        replacementTemplateData: {name:"Donald", favoriteanimal:"duck"}
     },
     {
         destination: {cc:["cc@example.com"]},
-        replacementTemplateData: "{ \"name\":\"Obama\", \"favoriteanimal\":\"eagle\" }"
+        replacementTemplateData: {name:"Obama", favoriteanimal:"eagle"}
     }
 ];
 string[] replyToAddresses = ["replyTo@example.com"];

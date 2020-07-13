@@ -74,10 +74,10 @@ function testSendEmail() {
 }
 function testCreateTemplate() {
     Template template = {
-        TemplateName:templateName,
-        SubjectPart: "Greetings, {{name}}!",
-        TextPart: "Dear {{name}},\r\nYour favorite animal is {{favoriteanimal}}.",
-        HtmlPart: "<h1>Hello {{name}}</h1><p>Your favorite animal is {{favoriteanimal}}.</p>"
+        templateName:templateName,
+        subjectPart: "Greetings, {{name}}!",
+        textPart: "Dear {{name}},\r\nYour favorite animal is {{favoriteanimal}}.",
+        htmlPart: "<h1>Hello {{name}}</h1><p>Your favorite animal is {{favoriteanimal}}.</p>"
     };
     error? response = sesClient->createTemplate(template);
     if (response is error) {
@@ -86,28 +86,41 @@ function testCreateTemplate() {
     }
 }
 
+// TODO add map<string>
 @test:Config {
     dependsOn: ["testCreateTemplate"],
     groups: ["group2"]
 }
 function testSendTemplatedEmail() {
-    string defaultTemplateData = "{ \"name\":\"friend\", \"favoriteanimal\":\"unknown\" }";
+    map<string> defaultTemplateData = {name:"friend", favoriteanimal:"unknown"};
     BulkEmailDestination[] destinations = [
         {
             destination: {to:[templatedEmailSendToAddress]},
-            replacementTemplateData: "{ \"name\":\"Donald\", \"favoriteanimal\":\"duck\" }"
+            replacementTemplateData: {name:"Donald", favoriteanimal:"duck"}
         },
         {
             destination: {cc:[templatedEmailSendCcAddress]},
-            replacementTemplateData: "{ \"name\":\"Obama\", \"favoriteanimal\":\"eagle\" }"
+            replacementTemplateData: {name:"Obama", favoriteanimal:"eagle"}
         }
     ];
     string[] replyToAddresses = [templatedEmailSendFromAddress];
 
-    EmailDestinationStatus[]|Error? response = sesClient->sendTemplatedEmail(defaultTemplateData, destinations,
-        templatedEmailSendFromAddress, templateName, replyToAddresses, templatedEmailSendFromAddress);
+    EmailDestinationStatus[]|Error? response = sesClient->sendTemplatedEmail(templatedEmailSendFromAddress, templateName, destinations, defaultTemplateData,
+        replyToAddresses, templatedEmailSendFromAddress);
     if (response is Error) {
         log:printError("Error while trying to send a templated email." + response.message());
+        test:assertTrue(false);
+    }
+}
+
+@test:Config {
+    dependsOn: ["testSendTemplatedEmail"],
+    groups: ["group2"]
+}
+function testDeleteTemplate() {
+    error? response = sesClient->deleteTemplate(templateName);
+    if (response is error) {
+        log:printError("Error while trying to delete the template." + response.message());
         test:assertTrue(false);
     }
 }

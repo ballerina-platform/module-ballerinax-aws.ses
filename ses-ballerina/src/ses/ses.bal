@@ -29,6 +29,7 @@ public type Client client object {
     private string region;
     private string host;
     private http:Client clientEp;
+    private email:SmtpClient? smtpClient = ();
 
     # Initializes the AWS SES client based on the provided configurations.
     #
@@ -37,13 +38,30 @@ public type Client client object {
         self.accessKey = config.accessKey;
         self.secretKey = config.secretKey;
         self.region = config.region;
-        self.host = SES_SERVICE_NAME + DOT + self.region + DOT + AMAZON_HOST;
+        self.host = string `${SES_SERVICE_NAME}.${self.region}.${AMAZON_HOST}`;
         http:ClientSecureSocket? clientSecureSocket = config?.secureSocketConfig;
         if (clientSecureSocket is http:ClientSecureSocket) {
             self.clientEp = new(HTTPS_URL_PREFIX + self.host, {secureSocket: clientSecureSocket});
         } else {
             self.clientEp = new(HTTPS_URL_PREFIX + self.host, {});
         }
+
+        string smtpPassword = self.getSmtpPassword();
+        string smtpUsername = self.accessKey;
+        int smtpPort = 587;
+        string smtpPortString = smtpPort.toString();
+        email:SmtpConfig smtpConfig = {
+            port: smtpPort,
+            enableSsl: false,
+            properties: {
+                PROP_MAIL_TRANSPORT_PROTOCOL:SMTP,
+                PROP_MAIL_SMTP_PORT:smtpPortString,
+                PROP_MAIL_SMTP_STARTTLS_ENABLE:"true", PROP_MAIL_SMTP_AUTH:"true"
+            }
+        };
+        string awsSmtpHost = string `${SES_SMTP_SERVICE_NAME}.${self.region}.${AMAZON_HOST}`;
+        email:SmtpClient smtpClient = new (awsSmtpHost, smtpUsername, smtpPassword, smtpConfig);
+
     }
 
     # Verifies the given email address by sending a verification email to it.
@@ -61,8 +79,7 @@ public type Client client object {
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_VERIFY_EMAIL_IDENTITY;
         parameters[PAYLOAD_PARAM_VERSION] = SES_VERSION;
         parameters[PAYLOAD_PARAM_EMAIL_ADDRESS] = emailAddress;
-        http:Request|error request = self.generatePOSTRequest(endpoint,
-            self.buildPayload(parameters));
+        http:Request|error request = self.generatePOSTRequest(endpoint, self.buildPayload(parameters));
         if (request is http:Request) {
             var httpResponse = self.clientEp->post(endpoint, request);
             xml|error response = handleResponse(httpResponse);
@@ -85,24 +102,12 @@ public type Client client object {
     # + return - The unique message identifier or else a `ses:Error` if the
     #            given email can't be sent
     public remote function sendEmail(Email email) returns Error? {
-        string smtpPassword = self.getSmtpPassword();
-        string smtpUsername = self.accessKey;
-        int smtpPort = 587;
-        string smtpPortString = smtpPort.toString();
-        email:SmtpConfig smtpConfig = {
-            port: smtpPort,
-            enableSsl: false,
-            properties: {
-                PROP_MAIL_TRANSPORT_PROTOCOL:SMTP,
-                PROP_MAIL_SMTP_PORT:smtpPortString,
-                PROP_MAIL_SMTP_STARTTLS_ENABLE:"true", PROP_MAIL_SMTP_AUTH:"true"
+        email:SmtpClient? smtpClient = self.smtpClient;
+        if (smtpClient is email:SmtpClient) {
+            email:Error? response = smtpClient->send(email);
+            if (response is email:Error) {
+                return Error("Error while sending the email ", response);
             }
-        };
-        string awsSmtpHost = SES_SMTP_SERVICE_NAME + DOT + self.region + DOT + AMAZON_HOST;
-        email:SmtpClient smtpClient = new (awsSmtpHost, smtpUsername, smtpPassword, smtpConfig);
-        email:Error? response = smtpClient->send(email);
-        if (response is email:Error) {
-            return Error("Error while sending the email ", response);
         }
     }
 
@@ -115,6 +120,14 @@ public type Client client object {
     #                                     "a@bcd.com", templateJson1);
     # ```
     #
+    # + 'source - The email address that is sending the email. This email
+    #             address must be either individually verified with Amazon SES, 
+    #             or from a domain that has been verified with Amazon SES
+    # + template - The template to use when sending this email
+    # + destinations - One or more `Destination` objects. All of the recipients
+    #                  in a `Destination` will receive the same version of the
+    #                  email. You can specify up to 50 `Destination` objects
+    #                  within a `destinations` array
     # + defaultTemplateData - A list of replacement values to apply to the
     #                         template when replacement data is not specified in
     #                         a Destination object. These values act as a
@@ -123,14 +136,6 @@ public type Client client object {
     #                         typically consisting of key-value pairs in which
     #                         the keys correspond to replacement tags in the
     #                         email template
-    # + destinations - One or more `Destination` objects. All of the recipients
-    #                  in a `Destination` will receive the same version of the
-    #                  email. You can specify up to 50 `Destination` objects
-    #                  within a `destinations` array
-    # + 'source - The email address that is sending the email. This email
-    #             address must be either individually verified with Amazon SES, 
-    #             or from a domain that has been verified with Amazon SES
-    # + template - The template to use when sending this email
     # + replyToAddresses - The reply-to email address(es) for the message. If
     #                      the recipient replies to the message, each reply-to
     #                      address will receive the reply
@@ -145,21 +150,21 @@ public type Client client object {
     #                domain that has been verified with Amazon SES
     # + return - `EmailDestinationStatus` for each destination or else a
     #            `ses:Error` if the given templated emails can't be sent
-    public remote function sendTemplatedEmail(string defaultTemplateData,
-            BulkEmailDestination[] destinations, string 'source,
-            string template, string[]? replyToAddresses = (),
-            string? returnPath = ()) returns EmailDestinationStatus[]|Error {
+    public remote function sendTemplatedEmail(string 'source, string template, BulkEmailDestination[] destinations,
+            map<string> defaultTemplateData, string[]? replyToAddresses = (), string? returnPath = ())
+            returns EmailDestinationStatus[]|Error {
         string endpoint = DEFAULT_ENDPOINT;
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_SEND_BULK_TEMPLATED_EMAIL;
         parameters[PAYLOAD_PARAM_VERSION] = SES_VERSION;
-        string|error defaultTemplateDataString = encoding:encodeUriComponent(defaultTemplateData, UTF_8);
+        string defaultTemplateDataString = self.getTemplateDataString(defaultTemplateData);
+        string|error defaultEncodedTemplateDataString = encoding:encodeUriComponent(defaultTemplateDataString, UTF_8);
         string defaultTemplateDataStringParam = "";
-        if (defaultTemplateDataString is error) {
-            return Error("Error while encoding default template data.", defaultTemplateDataString);
+        if (defaultEncodedTemplateDataString is error) {
+            return Error("Error while encoding default template data.", defaultEncodedTemplateDataString);
         } else {
-            defaultTemplateDataStringParam = defaultTemplateDataString;
+            defaultTemplateDataStringParam = defaultEncodedTemplateDataString;
         }
         parameters[PAYLOAD_PARAM_DEFAULT_TEMPLATE_DATA] = defaultTemplateDataStringParam;
         error? encodeError1 = self.addBulkEmailDestinationParams(parameters, destinations);
@@ -229,23 +234,80 @@ public type Client client object {
         }
     }
 
+    # Deletes an email template.
+    # ```ballerina
+    # ses:Error? result = sesClient->deleteTemplate("MyTemplate");
+    # ```
+    #
+    # + templateName - The name of the template to be deleted
+    # + return - A `ses:Error` if an error occurred while the operation
+    public remote function deleteTemplate(string templateName) returns Error? {
+        string endpoint = DEFAULT_ENDPOINT;
+        string payload;
+        map<string> parameters = {};
+        parameters[PAYLOAD_PARAM_ACTION] = ACTION_DELETE_TEMPLATE;
+        parameters[PAYLOAD_PARAM_VERSION] = SES_VERSION;
+        string|error encodedValue = encoding:encodeUriComponent(templateName, UTF_8);
+        if (encodedValue is error) {
+            return Error("Error while encoding template name ", encodedValue);
+        } else {
+            parameters[TEMPLATE_PARAM_TEMPLATE_NAME] = encodedValue;
+            http:Request|error request = self.generatePOSTRequest(endpoint, self.buildPayload(parameters));
+            if (request is http:Request) {
+                var httpResponse = self.clientEp->post(endpoint, request);
+                xml|error response = handleResponse(httpResponse);
+                if (response is error){
+                    return Error("Error while deleting the template.", response);
+                }
+            } else {
+                return Error("Error while generating the POST request to delete the template.", request);
+            }
+        }
+    }
+
+    private function getTemplateDataString(map<string> templateData) returns string {
+        string templateDataString = "{ ";
+        int i = 0;
+        foreach var [key, value] in templateData.entries() {
+            if (i > 0) {
+                templateDataString = templateDataString + ", ";
+            }
+            templateDataString = string `${templateDataString}\"${key}\":\"${value}\"`;
+            i = i + 1;
+        }
+        templateDataString = templateDataString + " }";
+        return templateDataString;
+    }
+
     private function getSmtpPassword() returns string {
-        string secretKey = self.secretKey;
-        string region = self.region;
-        string date = "11111111";
-        string serviceName = "ses";
-        string terminal = "aws4_request";
-        string message = "SendRawEmail";
         byte[] versionInBytes = base16 `04`;
-        byte[] kTerminal = self.getSignatureKey(secretKey, date, region, serviceName);
-        byte[] kMessage = self.sign(kTerminal, message);
+        byte[] kTerminal = self.getSignatureKey(self.secretKey, PASSWORD_GEN_DEFAULT_DATE, self.region,
+            PASSWORD_GEN_SERVICE_NAME);
+        byte[] kMessage = self.sign(kTerminal, PASSWORD_GEN_MESSAGE);
         versionInBytes.push(...kMessage);
         return array:toBase64(versionInBytes);
     }
 
     private function addTemplateParams(map<string> parameters, map<json> templateParams) returns error? {
         foreach var [key, value] in templateParams.entries() {
-            parameters[PAYLOAD_PARAM_TEMPLATE + DOT + <string>key] = check encoding:encodeUriComponent(<string>value, UTF_8);
+            match key {
+                TEMPLATE_FIELD_HTML_PART => {
+                    parameters[string `${PAYLOAD_PARAM_TEMPLATE}.${PARAM_KEY_PART_HTML_PART}`] =
+                        check encoding:encodeUriComponent(<string>value, UTF_8);
+                }
+                TEMPLATE_FIELD_SUBJECT_PART => {
+                    parameters[string `${PAYLOAD_PARAM_TEMPLATE}.${PARAM_KEY_PART_SUBJECT_PART}`] =
+                        check encoding:encodeUriComponent(<string>value, UTF_8);
+                }
+                TEMPLATE_FIELD_TEMPLATE_NAME => {
+                    parameters[string `${PAYLOAD_PARAM_TEMPLATE}.${PARAM_KEY_PART_TEMPLATE_NAME}`] =
+                        check encoding:encodeUriComponent(<string>value, UTF_8);
+                }
+                TEMPLATE_FIELD_TEMPLATE_PART => {
+                    parameters[string `${PAYLOAD_PARAM_TEMPLATE}.${PARAM_KEY_PART_TEMPLATE_PART}`] =
+                        check encoding:encodeUriComponent(<string>value, UTF_8);
+                }
+            }
         }
     }
 
@@ -258,9 +320,9 @@ public type Client client object {
                 string parameterName = <string>key;
                 json parameterValue = value;
                 if (parameterName == TEMPLATE_PARAM_REPLACEMENT_TEMPLATE_DATA) {
-                    string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT +
-                        bulkDestNumString + DOT + PARAM_KEY_PART_REPLACEMENT_TEMPLATE_DATA;
-                    parameters[paramKey] = check encoding:encodeUriComponent(<string>parameterValue, UTF_8);
+                    string paramKey = string `${PARAM_KEY_PART_DESTINATIONS}.${PARAM_KEY_PART_MEMBER}.${bulkDestNumString}.${PARAM_KEY_PART_REPLACEMENT_TEMPLATE_DATA}`;
+                    parameters[paramKey] = check encoding:encodeUriComponent(self.getTemplateDataString(
+                        <map<string>>parameterValue), UTF_8);
                 } else if ((parameterName == TEMPLATE_PARAM_REPLACEMENT_TAGS) && (parameterValue is MessageTag[])) {
                     check self.addReplacementTagsParams(parameters, parameterValue, bulkDestNumString);
                 } else if (parameterName == TEMPLATE_PARAM_DESTINATION) {
@@ -273,20 +335,16 @@ public type Client client object {
         }
     }
 
-    private function addReplacementTagsParams(map<string> parameters, json[] replacementTags, string bulkDestNumString) returns error? {
+    private function addReplacementTagsParams(map<string> parameters, json[] replacementTags, string bulkDestNumString)
+            returns error? {
         int i = 1;
         foreach json tag in replacementTags {
             string tagName = <string>tag.name;
             string tagValue = <string>tag.value;
             string tagNumber = i.toString();
-            string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString + DOT
-                + PARAM_KEY_PART_REPLACEMENT_TAGS + DOT + PARAM_KEY_PART_MEMBER + DOT + tagNumber + DOT
-                + PARAM_KEY_PART_MESSAGE_TAG + DOT + PARAM_KEY_PART_NAME;
-            parameters[paramKey] = check encoding:encodeUriComponent(tagName, UTF_8);
-            paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString + DOT +
-                PARAM_KEY_PART_REPLACEMENT_TAGS + DOT + PARAM_KEY_PART_MEMBER + DOT + tagNumber + DOT +
-                PARAM_KEY_PART_MESSAGE_TAG + DOT + PARAM_KEY_PART_Value;
-            parameters[paramKey] = check encoding:encodeUriComponent(tagValue, UTF_8);
+            string paramKeyPrefix = string `${PARAM_KEY_PART_DESTINATIONS}.${PARAM_KEY_PART_MEMBER}.${bulkDestNumString}.${PARAM_KEY_PART_REPLACEMENT_TAGS}.${PARAM_KEY_PART_MEMBER}.${tagNumber}.${PARAM_KEY_PART_MESSAGE_TAG}.`;
+            parameters[paramKeyPrefix + PARAM_KEY_PART_NAME] = check encoding:encodeUriComponent(tagName, UTF_8);
+            parameters[paramKeyPrefix + PARAM_KEY_PART_VALUE] = check encoding:encodeUriComponent(tagValue, UTF_8);
             i = i + 1;
         }
     }
@@ -296,14 +354,13 @@ public type Client client object {
         string[]? bcc = <string[]?>(check destinations?.bcc);
         string[]? cc = <string[]?>(check destinations?.cc);
         string[]? to = <string[]?>(check destinations?.to);
+        string paramKeyPrefix = string `${PARAM_KEY_PART_DESTINATIONS}.${PARAM_KEY_PART_MEMBER}.${bulkDestNumString}.${PARAM_KEY_PART_DESTINATION}.`;
         if (bcc is string[]) {
             int i = 1;
             foreach var address in bcc {
                 string addressNumber = i.toString();
-                string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString +
-                DOT + PARAM_KEY_PART_DESTINATION + DOT + PARAM_KEY_PART_BCC_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER +
-                DOT + addressNumber;
-                parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
+                parameters[string `${paramKeyPrefix}${PARAM_KEY_PART_BCC_ADDRESSES}.${PARAM_KEY_PART_MEMBER}.${addressNumber}`] =
+                    check encoding:encodeUriComponent(<string>address, UTF_8);
                 i = i + 1;
             }
         }
@@ -311,10 +368,8 @@ public type Client client object {
             int i = 1;
             foreach var address in cc {
                 string addressNumber = i.toString();
-                string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString +
-                    DOT + PARAM_KEY_PART_DESTINATION + DOT + PARAM_KEY_PART_CC_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER +
-                    DOT + addressNumber;
-                parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
+                parameters[string `${paramKeyPrefix}${PARAM_KEY_PART_CC_ADDRESSES}.${PARAM_KEY_PART_MEMBER}.${addressNumber}`] =
+                    check encoding:encodeUriComponent(<string>address, UTF_8);
                 i = i + 1;
             }
         }
@@ -322,10 +377,8 @@ public type Client client object {
             int i = 1;
             foreach var address in to {
                 string addressNumber = i.toString();
-                string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString +
-                    DOT + PARAM_KEY_PART_DESTINATION + DOT + PARAM_KEY_PART_TO_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER +
-                    DOT + addressNumber;
-                parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
+                parameters[string `${paramKeyPrefix}${PARAM_KEY_PART_TO_ADDRESSES}.${PARAM_KEY_PART_MEMBER}.${addressNumber}`] =
+                    check encoding:encodeUriComponent(<string>address, UTF_8);
                 i = i + 1;
             }
         }
@@ -335,7 +388,7 @@ public type Client client object {
         int i = 1;
         foreach var address in replyToAddresses {
             string addressNumber = i.toString();
-            string paramKey = PARAM_KEY_PART_REPLY_TO_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER + DOT + addressNumber;
+            string paramKey = string `${PARAM_KEY_PART_REPLY_TO_ADDRESSES}.${PARAM_KEY_PART_MEMBER}.${addressNumber}`;
             parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
             i = i + 1;
         }
@@ -363,29 +416,22 @@ public type Client client object {
             amzDate = time:format(time, ISO8601_BASIC_DATE_FORMAT);
             dateStamp = time:format(time, SHORT_DATE_FORMAT);
             if (amzDate is string && dateStamp is string) {
-                string contentType = "application/x-www-form-urlencoded";
                 string requestParameters =  payload;
                 string canonicalQuerystring = "";
-                string canonicalHeaders = "content-type:" + contentType + "\n" + "host:" + self.host + "\n"
-                    + "x-amz-date:" + amzDate + "\n";
-                string signedHeaders = "content-type;host;x-amz-date";
+                string canonicalHeaders = string `${HEADER_CONTENT_TYPE}:${CONTENT_TYPE}\n${HEADER_HOST}:${self.host}\n${HEADER_X_AMZ_DATE}:${amzDate}\n`;
+                string signedHeaders = string `${HEADER_CONTENT_TYPE};${HEADER_HOST};${HEADER_X_AMZ_DATE}`;
                 string payloadHash = array:toBase16(crypto:hashSha256(requestParameters.toBytes())).toLowerAscii();
-                string canonicalRequest = POST + "\n" + canonicalUri + "\n" + canonicalQuerystring + "\n"
-                    + canonicalHeaders + "\n" + signedHeaders + "\n" + payloadHash;
-                string algorithm = "AWS4-HMAC-SHA256";
-                string credentialScope = dateStamp + "/" + self.region + "/" + SES_SERVICE_NAME + "/" + "aws4_request";
-                string stringToSign = algorithm + "\n" +  amzDate + "\n" +  credentialScope + "\n"
-                    +  array:toBase16(crypto:hashSha256(canonicalRequest.toBytes())).toLowerAscii();
+                string canonicalRequest = string `${POST}\n${canonicalUri}\n${canonicalQuerystring}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+                string credentialScope = string `${dateStamp}/${self.region}/${SES_SERVICE_NAME}/aws4_request`;
+                string stringToSign =  string `${ALGORITHM}\n${amzDate}\n${credentialScope}\n${array:toBase16(crypto:hashSha256(canonicalRequest.toBytes())).toLowerAscii()}`;
                 byte[] signingKey = self.getSignatureKey(self.secretKey, dateStamp, self.region, SES_SERVICE_NAME);
-                string signature = array:toBase16(crypto:hmacSha256(stringToSign
-                    .toBytes(), signingKey)).toLowerAscii();
-                string authorizationHeader = algorithm + " " + "Credential=" + self.accessKey + "/"
-                    + credentialScope + ", " +  "SignedHeaders=" + signedHeaders + ", " + "Signature=" + signature;
+                string signature = array:toBase16(crypto:hmacSha256(stringToSign.toBytes(), signingKey)).toLowerAscii();
+                string authorizationHeader = string `${ALGORITHM} Credential=${self.accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
                 map<string> headers = {};
-                headers["Content-Type"] = contentType;
-                headers["X-Amz-Date"] = amzDate;
-                headers["Authorization"] = authorizationHeader;
+                headers[HEADER_CONTENT_TYPE] = CONTENT_TYPE;
+                headers[HEADER_X_AMZ_DATE] = amzDate;
+                headers[HEADER_AUTHORIZATION] = authorizationHeader;
 
                 string msgBody = requestParameters;
                 http:Request request = new;
@@ -412,7 +458,8 @@ public type Client client object {
         return crypto:hmacSha256(msg.toBytes(), key);
     }
 
-    private function getSignatureKey(string secretKey, string datestamp, string region, string serviceName)  returns byte[] {
+    private function getSignatureKey(string secretKey, string datestamp, string region, string serviceName)
+            returns byte[] {
         string awskey = (AWS4 + secretKey);
         byte[] kDate = self.sign(awskey.toBytes(), datestamp);
         byte[] kRegion = self.sign(kDate, region);
@@ -443,7 +490,7 @@ type JsonMap map<json>;
 public type BulkEmailDestination record {|
     Destination destination;
     MessageTag[] replacementTags?;
-    string replacementTemplateData?;
+    map<string> replacementTemplateData?;
 |};
 
 # An object that contains the response from the `sendTemplatedEmail` method.
@@ -476,16 +523,16 @@ public type MessageTag record {|
 # The content of the email, composed of a subject line, an HTML part, and a
 # text-only part
 #
-# + HtmlPart - the HTML body of the email 
-# + SubjectPart - the subject line of the email
-# + TemplateName - the name of the template
-# + TextPart - the email body that will be visible to recipients whose email
+# + htmlPart - the HTML body of the email 
+# + subjectPart - the subject line of the email
+# + templateName - the name of the template
+# + textPart - the email body that will be visible to recipients whose email
 #              clients do not display HTML
 public type Template record {
-    string HtmlPart?;
-    string SubjectPart?;
-    string TemplateName;
-    string TextPart?;
+    string htmlPart?;
+    string subjectPart?;
+    string templateName;
+    string textPart?;
 };
 
 # Configuration provided for the client

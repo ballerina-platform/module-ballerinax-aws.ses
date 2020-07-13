@@ -26,10 +26,17 @@ const string AWS4 = "AWS4";
 const string POST = "POST";
 const string GMT = "GMT";
 const string SMTP = "smtp";
+const string CONTENT_TYPE = "application/x-www-form-urlencoded";
+const string ALGORITHM = "AWS4-HMAC-SHA256";
 const string PROP_MAIL_TRANSPORT_PROTOCOL = "mail.transport.protocol";
 const string PROP_MAIL_SMTP_PORT = "mail.smtp.port";
 const string PROP_MAIL_SMTP_STARTTLS_ENABLE = "mail.smtp.starttls.enable";
 const string PROP_MAIL_SMTP_AUTH = "mail.smtp.auth";
+
+const string HEADER_AUTHORIZATION = "authorization";
+const string HEADER_CONTENT_TYPE = "content-type";
+const string HEADER_HOST = "host";
+const string HEADER_X_AMZ_DATE = "x-amz-date";
 
 const string STATUS_CODE = "status code";
 const string COLON_SYMBOL = ":";
@@ -37,15 +44,27 @@ const string SEMICOLON_SYMBOL = ";";
 const string WHITE_SPACE = " ";
 const string DOT = ".";
 const string DEFAULT_ENDPOINT = "/";
+
+const string PASSWORD_GEN_DEFAULT_DATE = "11111111";
+const string PASSWORD_GEN_SERVICE_NAME = "ses";
+const string PASSWORD_GEN_MESSAGE = "SendRawEmail";
+
 const string MESSAGE = "message";
 const string SES_VERSION = "2010-12-01";
 const string ACTION_CREATE_TEMPLATE = "CreateTemplate";
+const string ACTION_DELETE_TEMPLATE = "DeleteTemplate";
 const string ACTION_SEND_BULK_TEMPLATED_EMAIL = "SendBulkTemplatedEmail";
 const string ACTION_VERIFY_EMAIL_IDENTITY = "VerifyEmailIdentity";
 
 const string TEMPLATE_PARAM_REPLACEMENT_TEMPLATE_DATA = "replacementTemplateData";
 const string TEMPLATE_PARAM_REPLACEMENT_TAGS = "replacementTags";
 const string TEMPLATE_PARAM_DESTINATION = "destination";
+const string TEMPLATE_PARAM_TEMPLATE_NAME = "TemplateName";
+
+const string TEMPLATE_FIELD_HTML_PART = "htmlPart";
+const string TEMPLATE_FIELD_SUBJECT_PART = "subjectPart";
+const string TEMPLATE_FIELD_TEMPLATE_NAME = "templateName";
+const string TEMPLATE_FIELD_TEMPLATE_PART = "textPart";
 
 const string PARAM_KEY_PART_DESTINATION = "Destination";
 const string PARAM_KEY_PART_DESTINATIONS = "Destinations";
@@ -53,12 +72,16 @@ const string PARAM_KEY_PART_REPLACEMENT_TEMPLATE_DATA = "ReplacementTemplateData
 const string PARAM_KEY_PART_REPLACEMENT_TAGS = "ReplacementTags";
 const string PARAM_KEY_PART_MESSAGE_TAG = "MessageTag";
 const string PARAM_KEY_PART_NAME = "Name";
-const string PARAM_KEY_PART_Value = "Value";
+const string PARAM_KEY_PART_VALUE = "Value";
 const string PARAM_KEY_PART_BCC_ADDRESSES = "BccAddresses";
 const string PARAM_KEY_PART_CC_ADDRESSES = "CcAddresses";
 const string PARAM_KEY_PART_TO_ADDRESSES = "ToAddresses";
 const string PARAM_KEY_PART_REPLY_TO_ADDRESSES = "ReplyToAddresses";
 const string PARAM_KEY_PART_MEMBER = "member";
+const string PARAM_KEY_PART_HTML_PART = "HtmlPart";
+const string PARAM_KEY_PART_SUBJECT_PART = "SubjectPart";
+const string PARAM_KEY_PART_TEMPLATE_NAME = "TemplateName";
+const string PARAM_KEY_PART_TEMPLATE_PART = "TextPart";
 
 const string PAYLOAD_PARAM_ACTION = "Action";
 const string PAYLOAD_PARAM_VERSION = "Version";
