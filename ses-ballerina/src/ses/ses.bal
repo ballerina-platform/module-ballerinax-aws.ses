@@ -37,12 +37,12 @@ public type Client client object {
         self.accessKey = config.accessKey;
         self.secretKey = config.secretKey;
         self.region = config.region;
-        self.host = SES_SERVICE_NAME + "." + self.region + "." + AMAZON_HOST;
+        self.host = SES_SERVICE_NAME + DOT + self.region + DOT + AMAZON_HOST;
         http:ClientSecureSocket? clientSecureSocket = config?.secureSocketConfig;
         if (clientSecureSocket is http:ClientSecureSocket) {
-            self.clientEp = new("https://" + self.host, {secureSocket: clientSecureSocket});
+            self.clientEp = new(HTTPS_URL_PREFIX + self.host, {secureSocket: clientSecureSocket});
         } else {
-            self.clientEp = new("https://" + self.host, {});
+            self.clientEp = new(HTTPS_URL_PREFIX + self.host, {});
         }
     }
 
@@ -55,7 +55,7 @@ public type Client client object {
     # + return - A `ses:Error` if an error occurred while the operation
     public remote function verifyEmailIdentity(string emailAddress) returns
             Error? {
-        string endpoint = "/";
+        string endpoint = DEFAULT_ENDPOINT;
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_VERIFY_EMAIL_IDENTITY;
@@ -93,12 +93,12 @@ public type Client client object {
             port: smtpPort,
             enableSsl: false,
             properties: {
-                "mail.transport.protocol":"smtp",
-                "mail.smtp.port":smtpPortString,
-                "mail.smtp.starttls.enable":"true", "mail.smtp.auth":"true"
+                PROP_MAIL_TRANSPORT_PROTOCOL:SMTP,
+                PROP_MAIL_SMTP_PORT:smtpPortString,
+                PROP_MAIL_SMTP_STARTTLS_ENABLE:"true", PROP_MAIL_SMTP_AUTH:"true"
             }
         };
-        string awsSmtpHost = SES_SMTP_SERVICE_NAME + "." + self.region + "." + AMAZON_HOST;
+        string awsSmtpHost = SES_SMTP_SERVICE_NAME + DOT + self.region + DOT + AMAZON_HOST;
         email:SmtpClient smtpClient = new (awsSmtpHost, smtpUsername, smtpPassword, smtpConfig);
         email:Error? response = smtpClient->send(email);
         if (response is email:Error) {
@@ -149,7 +149,7 @@ public type Client client object {
             BulkEmailDestination[] destinations, string 'source,
             string template, string[]? replyToAddresses = (),
             string? returnPath = ()) returns EmailDestinationStatus[]|Error {
-        string endpoint = "/";
+        string endpoint = DEFAULT_ENDPOINT;
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_SEND_BULK_TEMPLATED_EMAIL;
@@ -202,7 +202,7 @@ public type Client client object {
     #              part, and a text-only part
     # + return - A `ses:Error` if an error occurred while the operation
     public remote function createTemplate(Template template) returns Error? {
-        string endpoint = "/";
+        string endpoint = DEFAULT_ENDPOINT;
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_CREATE_TEMPLATE;
@@ -245,7 +245,7 @@ public type Client client object {
 
     private function addTemplateParams(map<string> parameters, map<json> templateParams) returns error? {
         foreach var [key, value] in templateParams.entries() {
-            parameters["Template" + "." + <string>key] = check encoding:encodeUriComponent(<string>value, UTF_8);
+            parameters[PAYLOAD_PARAM_TEMPLATE + DOT + <string>key] = check encoding:encodeUriComponent(<string>value, UTF_8);
         }
     }
 
@@ -258,8 +258,9 @@ public type Client client object {
                 string parameterName = <string>key;
                 json parameterValue = value;
                 if (parameterName == TEMPLATE_PARAM_REPLACEMENT_TEMPLATE_DATA) {
-                    parameters["Destinations.member." + bulkDestNumString + ".ReplacementTemplateData"] = check encoding:encodeUriComponent(
-                        <string>parameterValue, UTF_8);
+                    string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT +
+                        bulkDestNumString + DOT + PARAM_KEY_PART_REPLACEMENT_TEMPLATE_DATA;
+                    parameters[paramKey] = check encoding:encodeUriComponent(<string>parameterValue, UTF_8);
                 } else if ((parameterName == TEMPLATE_PARAM_REPLACEMENT_TAGS) && (parameterValue is MessageTag[])) {
                     check self.addReplacementTagsParams(parameters, parameterValue, bulkDestNumString);
                 } else if (parameterName == TEMPLATE_PARAM_DESTINATION) {
@@ -278,15 +279,20 @@ public type Client client object {
             string tagName = <string>tag.name;
             string tagValue = <string>tag.value;
             string tagNumber = i.toString();
-            parameters["Destinations.member." + bulkDestNumString + ".ReplacementTags.member." + tagNumber + ".MessageTag.Name"] =
-                check encoding:encodeUriComponent(tagName, UTF_8);
-            parameters["Destinations.member." + bulkDestNumString + ".ReplacementTags.member." + tagNumber + ".MessageTag.Value"] =
-                check encoding:encodeUriComponent(tagValue, UTF_8);
+            string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString + DOT
+                + PARAM_KEY_PART_REPLACEMENT_TAGS + DOT + PARAM_KEY_PART_MEMBER + DOT + tagNumber + DOT
+                + PARAM_KEY_PART_MESSAGE_TAG + DOT + PARAM_KEY_PART_NAME;
+            parameters[paramKey] = check encoding:encodeUriComponent(tagName, UTF_8);
+            paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString + DOT +
+                PARAM_KEY_PART_REPLACEMENT_TAGS + DOT + PARAM_KEY_PART_MEMBER + DOT + tagNumber + DOT +
+                PARAM_KEY_PART_MESSAGE_TAG + DOT + PARAM_KEY_PART_Value;
+            parameters[paramKey] = check encoding:encodeUriComponent(tagValue, UTF_8);
             i = i + 1;
         }
     }
 
-    private function addDestinationParams(map<string> parameters, json destinations, string bulkDestNumString) returns error? {
+    private function addDestinationParams(map<string> parameters, json destinations, string bulkDestNumString)
+            returns error? {
         string[]? bcc = <string[]?>(check destinations?.bcc);
         string[]? cc = <string[]?>(check destinations?.cc);
         string[]? to = <string[]?>(check destinations?.to);
@@ -294,8 +300,10 @@ public type Client client object {
             int i = 1;
             foreach var address in bcc {
                 string addressNumber = i.toString();
-                parameters["Destinations.member." + bulkDestNumString + ".Destination.BccAddresses.member." + addressNumber] =
-                    check encoding:encodeUriComponent(<string>address, UTF_8);
+                string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString +
+                DOT + PARAM_KEY_PART_DESTINATION + DOT + PARAM_KEY_PART_BCC_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER +
+                DOT + addressNumber;
+                parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
                 i = i + 1;
             }
         }
@@ -303,8 +311,10 @@ public type Client client object {
             int i = 1;
             foreach var address in cc {
                 string addressNumber = i.toString();
-                parameters["Destinations.member." + bulkDestNumString + ".Destination.CcAddresses.member." + addressNumber] =
-                    check encoding:encodeUriComponent(<string>address, UTF_8);
+                string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString +
+                    DOT + PARAM_KEY_PART_DESTINATION + DOT + PARAM_KEY_PART_CC_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER +
+                    DOT + addressNumber;
+                parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
                 i = i + 1;
             }
         }
@@ -312,8 +322,10 @@ public type Client client object {
             int i = 1;
             foreach var address in to {
                 string addressNumber = i.toString();
-                parameters["Destinations.member." + bulkDestNumString + ".Destination.ToAddresses.member." + addressNumber] =
-                    check encoding:encodeUriComponent(<string>address, UTF_8);
+                string paramKey = PARAM_KEY_PART_DESTINATIONS + DOT + PARAM_KEY_PART_MEMBER + DOT + bulkDestNumString +
+                    DOT + PARAM_KEY_PART_DESTINATION + DOT + PARAM_KEY_PART_TO_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER +
+                    DOT + addressNumber;
+                parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
                 i = i + 1;
             }
         }
@@ -323,7 +335,8 @@ public type Client client object {
         int i = 1;
         foreach var address in replyToAddresses {
             string addressNumber = i.toString();
-            parameters["ReplyToAddresses.member." + addressNumber] = check encoding:encodeUriComponent(<string>address, UTF_8);
+            string paramKey = PARAM_KEY_PART_REPLY_TO_ADDRESSES + DOT + PARAM_KEY_PART_MEMBER + DOT + addressNumber;
+            parameters[paramKey] = check encoding:encodeUriComponent(<string>address, UTF_8);
             i = i + 1;
         }
     }
@@ -343,7 +356,7 @@ public type Client client object {
 
     private function generatePOSTRequest(string canonicalUri, string payload)
             returns http:Request|Error {
-        time:Time|error time = time:toTimeZone(time:currentTime(), "GMT");
+        time:Time|error time = time:toTimeZone(time:currentTime(), GMT);
         string|error amzDate;
         string|error dateStamp;
         if (time is time:Time) {
