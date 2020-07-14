@@ -60,7 +60,7 @@ public type Client client object {
             }
         };
         string awsSmtpHost = string `${SES_SMTP_SERVICE_NAME}.${self.region}.${AMAZON_HOST}`;
-        email:SmtpClient smtpClient = new (awsSmtpHost, smtpUsername, smtpPassword, smtpConfig);
+        self.smtpClient = new (awsSmtpHost, smtpUsername, smtpPassword, smtpConfig);
 
     }
 
@@ -106,8 +106,10 @@ public type Client client object {
         if (smtpClient is email:SmtpClient) {
             email:Error? response = smtpClient->send(email);
             if (response is email:Error) {
-                return Error("Error while sending the email ", response);
+                return Error("Error while sending the email.", response);
             }
+        } else {
+            return Error("AWS SES Connector is not initialized.");
         }
     }
 
