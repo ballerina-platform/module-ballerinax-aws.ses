@@ -15,15 +15,13 @@
 // under the License.
 
 import ballerina/test;
-import ballerina/log;
 import ballerina/math;
-import ballerina/system;
 import ballerina/config;
 
 Configuration configuration = {
-    accessKey: getConfigValue("ACCESS_KEY_ID"),
-    secretKey: getConfigValue("SECRET_ACCESS_KEY"),
-    region: getConfigValue("REGION")
+    accessKey: config:getAsString("ACCESS_KEY_ID"),
+    secretKey: config:getAsString("SECRET_ACCESS_KEY"),
+    region: config:getAsString("REGION")
 };
 
 Client sesClient = new(configuration);
@@ -32,12 +30,12 @@ string standardQueueResourcePath = "";
 string receivedReceiptHandler = "";
 string standardQueueReceivedReceiptHandler = "";
 string templateName = genRandomTemplateName();
-string emailVerificatioAddress = getConfigValue("VERIFY_ADDRESS");
-string emailSendFromAddress = getConfigValue("SEND_FROM_ADDRESS");
-string emailSendToAddress = getConfigValue("SEND_TO_ADDRESS");
-string templatedEmailSendFromAddress = getConfigValue("TEMPLATED_SEND_FROM_ADDRESS");
-string templatedEmailSendToAddress = getConfigValue("TEMPLATED_SEND_TO_ADDRESS");
-string templatedEmailSendCcAddress = getConfigValue("TEMPLATED_SEND_CC_ADDRESS");
+string emailVerificatioAddress = config:getAsString("VERIFY_ADDRESS");
+string emailSendFromAddress = config:getAsString("SEND_FROM_ADDRESS");
+string emailSendToAddress = config:getAsString("SEND_TO_ADDRESS");
+string templatedEmailSendFromAddress = config:getAsString("TEMPLATED_SEND_FROM_ADDRESS");
+string templatedEmailSendToAddress = config:getAsString("TEMPLATED_SEND_TO_ADDRESS");
+string templatedEmailSendCcAddress = config:getAsString("TEMPLATED_SEND_CC_ADDRESS");
 
 @test:Config {
     groups: ["group1"]
@@ -45,8 +43,7 @@ string templatedEmailSendCcAddress = getConfigValue("TEMPLATED_SEND_CC_ADDRESS")
 function testVerifyEmailIdentity() {
     error? response = sesClient->verifyEmailIdentity(emailVerificatioAddress);
     if (response is error) {
-        log:printError("Error while trying to verify email address." + response.message());
-        test:assertTrue(false);
+        test:assertFail("Error while trying to verify email address." + response.message());
     }
 }
 
@@ -63,8 +60,7 @@ function testSendEmail() {
     };
     error? response = sesClient->sendEmail(email);
     if (response is error) {
-        log:printError("Error while sending an email." + response.message());
-        test:assertTrue(false);
+        test:assertFail("Error while sending an email." + response.message());
     }
 }
 
@@ -81,8 +77,7 @@ function testCreateTemplate() {
     };
     error? response = sesClient->createTemplate(template);
     if (response is error) {
-        log:printError("Error while trying to create a template." + response.message());
-        test:assertTrue(false);
+        test:assertFail("Error while trying to create a template." + response.message());
     }
 }
 
@@ -107,8 +102,7 @@ function testSendTemplatedEmail() {
     EmailDestinationStatus[]|Error? response = sesClient->sendTemplatedEmail(templatedEmailSendFromAddress, templateName, destinations, defaultTemplateData,
         replyToAddresses, templatedEmailSendFromAddress);
     if (response is Error) {
-        log:printError("Error while trying to send a templated email." + response.message());
-        test:assertTrue(false);
+        test:assertFail("Error while trying to send a templated email." + response.message());
     }
 }
 
@@ -119,17 +113,12 @@ function testSendTemplatedEmail() {
 function testDeleteTemplate() {
     error? response = sesClient->deleteTemplate(templateName);
     if (response is error) {
-        log:printError("Error while trying to delete the template." + response.message());
-        test:assertTrue(false);
+        test:assertFail("Error while trying to delete the template." + response.message());
     }
 }
 
 function genRandomTemplateName() returns string {
-    float randomNumFloat = math:random()*10000000;
+    float randomNumFloat = math:random() * 10000000;
     anydata randomNumInt = math:round(randomNumFloat);
     return "Template" + randomNumInt.toString();
-}
-
-function getConfigValue(string key) returns string {
-    return (system:getEnv(key) != "") ? system:getEnv(key) : config:getAsString(key);
 }

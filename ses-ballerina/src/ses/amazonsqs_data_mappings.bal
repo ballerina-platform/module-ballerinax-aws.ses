@@ -14,27 +14,24 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// import ballerina/io;
-// import ballerina/lang.'xml as xmllib;
-
 xmlns "http://ses.amazonaws.com/doc/2010-12-01/" as ns;
 
 function xmlToEmailDestinationStatuses(xml response) returns EmailDestinationStatus[]|Error {
     xml msgStatus = response/<ns:SendBulkTemplatedEmailResult>/<ns:Status>;
     EmailDestinationStatus[] emailDestinationStatuses = [];
-        int i = 0;
-        foreach var b in msgStatus.elements() {
-            if (b is xml) {
-                EmailDestinationStatus|error emailDestinationStatus = xmlToEmailDestinationStatus(b.elements());
-                if (emailDestinationStatus is EmailDestinationStatus) {
-                    emailDestinationStatuses[i] = emailDestinationStatus;
-                } else {
-                    return Error("Error while generating email destination status.", emailDestinationStatus);
-                }
-                i = i + 1;
+    int i = 0;
+    foreach var b in msgStatus.elements() {
+        if (b is xml) {
+            EmailDestinationStatus|error emailDestinationStatus = xmlToEmailDestinationStatus(b.elements());
+            if (emailDestinationStatus is EmailDestinationStatus) {
+                emailDestinationStatuses[i] = emailDestinationStatus;
+            } else {
+                return Error("Error while generating email destination status.", emailDestinationStatus);
             }
+            i = i + 1;
         }
-        return emailDestinationStatuses;
+    }
+    return emailDestinationStatuses;
 }
 
 function xmlToEmailDestinationStatus(xml message) returns EmailDestinationStatus|error {

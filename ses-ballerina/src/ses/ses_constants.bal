@@ -37,13 +37,7 @@ const string HEADER_AUTHORIZATION = "authorization";
 const string HEADER_CONTENT_TYPE = "content-type";
 const string HEADER_HOST = "host";
 const string HEADER_X_AMZ_DATE = "x-amz-date";
-
 const string STATUS_CODE = "status code";
-const string COLON_SYMBOL = ":";
-const string SEMICOLON_SYMBOL = ";";
-const string WHITE_SPACE = " ";
-const string DOT = ".";
-const string DEFAULT_ENDPOINT = "/";
 
 const string PASSWORD_GEN_DEFAULT_DATE = "11111111";
 const string PASSWORD_GEN_SERVICE_NAME = "ses";
@@ -90,3 +84,5 @@ const string PAYLOAD_PARAM_TEMPLATE = "Template";
 const string PAYLOAD_PARAM_RETURN_PATH = "ReturnPath";
 const string PAYLOAD_PARAM_DEFAULT_TEMPLATE_DATA = "DefaultTemplateData";
 const string PAYLOAD_PARAM_EMAIL_ADDRESS = "EmailAddress";
+
+const int SMTP_PORT = 587;

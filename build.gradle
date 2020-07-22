@@ -17,7 +17,6 @@
 
 plugins {
     id "com.github.spotbugs" version "4.0.5"
-    id "com.github.johnrengelman.shadow" version "5.2.0"
     id "de.undercouch.download" version "4.0.4"
     id "net.researchgate.release" version "2.6.0"
 }
@@ -94,6 +93,8 @@ subprojects {
 }
 
 task codeCoverageReport(type: JacocoReport) {
+    dependsOn = subprojects.test
+    
     executionData fileTree(project.rootDir.absolutePath).include("**/build/coverage-reports/*.exec")
 
     subprojects.each {

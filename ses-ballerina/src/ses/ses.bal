@@ -48,10 +48,9 @@ public type Client client object {
 
         string smtpPassword = self.getSmtpPassword();
         string smtpUsername = self.accessKey;
-        int smtpPort = 587;
-        string smtpPortString = smtpPort.toString();
+        string smtpPortString = SMTP_PORT.toString();
         email:SmtpConfig smtpConfig = {
-            port: smtpPort,
+            port: SMTP_PORT,
             enableSsl: false,
             properties: {
                 PROP_MAIL_TRANSPORT_PROTOCOL:SMTP,
@@ -73,7 +72,7 @@ public type Client client object {
     # + return - A `ses:Error` if an error occurred while the operation
     public remote function verifyEmailIdentity(string emailAddress) returns
             Error? {
-        string endpoint = DEFAULT_ENDPOINT;
+        string endpoint = "/";
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_VERIFY_EMAIL_IDENTITY;
@@ -122,7 +121,7 @@ public type Client client object {
     #                                 defaultTemplateData);
     # ```
     #
-    # + 'source - The email address that is sending the email. This email
+    # + source - The email address that is sending the email. This email
     #             address must be either individually verified with Amazon SES, 
     #             or from a domain that has been verified with Amazon SES
     # + template - The template to use when sending this email
@@ -155,7 +154,7 @@ public type Client client object {
     public remote function sendTemplatedEmail(string 'source, string template, BulkEmailDestination[] destinations,
             map<string> defaultTemplateData, string[]? replyToAddresses = (), string? returnPath = ())
             returns EmailDestinationStatus[]|Error {
-        string endpoint = DEFAULT_ENDPOINT;
+        string endpoint = "/";
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_SEND_BULK_TEMPLATED_EMAIL;
@@ -209,7 +208,7 @@ public type Client client object {
     #              part, and a text-only part
     # + return - A `ses:Error` if an error occurred while the operation
     public remote function createTemplate(Template template) returns Error? {
-        string endpoint = DEFAULT_ENDPOINT;
+        string endpoint = "/";
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_CREATE_TEMPLATE;
@@ -244,7 +243,7 @@ public type Client client object {
     # + templateName - The name of the template to be deleted
     # + return - A `ses:Error` if an error occurred while the operation
     public remote function deleteTemplate(string templateName) returns Error? {
-        string endpoint = DEFAULT_ENDPOINT;
+        string endpoint = "/";
         string payload;
         map<string> parameters = {};
         parameters[PAYLOAD_PARAM_ACTION] = ACTION_DELETE_TEMPLATE;

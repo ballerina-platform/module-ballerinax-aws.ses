@@ -36,13 +36,11 @@ function handleResponse(http:Response|error httpResponse) returns @untainted xml
                 xmlns "http://ses.amazonaws.com/doc/2010-12-01/" as ns;
                 string xmlResponseErrorCode = httpResponse.statusCode.toString();
                 string responseErrorMessage = (xmlResponse/*).toString();
-                string errorMsg = STATUS_CODE + COLON_SYMBOL + xmlResponseErrorCode + 
-                    SEMICOLON_SYMBOL + WHITE_SPACE + MESSAGE + COLON_SYMBOL + WHITE_SPACE + 
-                    responseErrorMessage;
+                string errorMsg = string `${STATUS_CODE}:${xmlResponseErrorCode}; ${MESSAGE}: ${responseErrorMessage}`;
                 return Error(errorMsg);
             }
         } else {
-                return Error(RESPONSE_PAYLOAD_IS_NOT_XML_MSG);
+            return Error(RESPONSE_PAYLOAD_IS_NOT_XML_MSG);
         }
     } else {
         return Error(ERROR_OCCURRED_WHILE_INVOKING_REST_API_MSG, httpResponse);
