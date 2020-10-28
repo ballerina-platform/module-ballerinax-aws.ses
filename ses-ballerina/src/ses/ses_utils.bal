@@ -20,7 +20,7 @@ import ballerina/http;
 #
 # + httpResponse - Http response or error
 # + return - If successful returns `json` response. Else returns error.
-function handleResponse(http:Response|error httpResponse) returns @untainted xml|Error {
+isolated function handleResponse(http:Response|error httpResponse) returns @untainted xml|Error {
     if (httpResponse is http:Response) {
         if (httpResponse.statusCode == http:STATUS_NO_CONTENT){
             //If status 204, then no response body. So returns json boolean true.

@@ -16,7 +16,7 @@
 
 xmlns "http://ses.amazonaws.com/doc/2010-12-01/" as ns;
 
-function xmlToEmailDestinationStatuses(xml response) returns EmailDestinationStatus[]|Error {
+isolated function xmlToEmailDestinationStatuses(xml response) returns EmailDestinationStatus[]|Error {
     xml msgStatus = response/<ns:SendBulkTemplatedEmailResult>/<ns:Status>;
     EmailDestinationStatus[] emailDestinationStatuses = [];
     int i = 0;
@@ -34,7 +34,7 @@ function xmlToEmailDestinationStatuses(xml response) returns EmailDestinationSta
     return emailDestinationStatuses;
 }
 
-function xmlToEmailDestinationStatus(xml message) returns EmailDestinationStatus|error {
+isolated function xmlToEmailDestinationStatus(xml message) returns EmailDestinationStatus|error {
     EmailDestinationStatus emailDestinationStatus = {
         errorDescription: (message/<ns:member>/<ns:Error>/*).toString(),
         messageId:(message/<ns:member>/<ns:MessageId>/*).toString(),
