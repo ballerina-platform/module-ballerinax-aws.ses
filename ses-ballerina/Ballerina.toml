@@ -2,5 +2,3 @@
 org-name = "ballerinax"
 version = "0.9.1"
 
-[platform]
-target = "java8"
