@@ -22,7 +22,7 @@ import ballerina/lang.array;
 import ballerina/time;
 
 # Initializes the AWS SES client based on the provided configurations.
-public type Client client object {
+public client class Client {
 
     private string accessKey;
     private string secretKey;
@@ -100,7 +100,7 @@ public type Client client object {
     # + email - Email message with type email:Email
     # + return - The unique message identifier or else a `ses:Error` if the
     #            given email can't be sent
-    public remote function sendEmail(Email email) returns Error? {
+    public isolated remote function sendEmail(Email email) returns Error? {
         email:SmtpClient? smtpClient = self.smtpClient;
         if (smtpClient is email:SmtpClient) {
             email:Error? response = smtpClient->send(email);
@@ -266,7 +266,7 @@ public type Client client object {
         }
     }
 
-    private function getTemplateDataString(map<string> templateData) returns string {
+    private isolated function getTemplateDataString(map<string> templateData) returns string {
         string templateDataString = "{ ";
         int i = 0;
         foreach var [key, value] in templateData.entries() {
@@ -280,7 +280,7 @@ public type Client client object {
         return templateDataString;
     }
 
-    private function getSmtpPassword() returns string {
+    private isolated function getSmtpPassword() returns string {
         byte[] versionInBytes = base16 `04`;
         byte[] kTerminal = self.getSignatureKey(self.secretKey, PASSWORD_GEN_DEFAULT_DATE, self.region,
             PASSWORD_GEN_SERVICE_NAME);
@@ -289,7 +289,7 @@ public type Client client object {
         return array:toBase64(versionInBytes);
     }
 
-    private function addTemplateParams(map<string> parameters, map<json> templateParams) returns error? {
+    private isolated function addTemplateParams(map<string> parameters, map<json> templateParams) returns error? {
         foreach var [key, value] in templateParams.entries() {
             match key {
                 TEMPLATE_FIELD_HTML_PART => {
@@ -312,7 +312,7 @@ public type Client client object {
         }
     }
 
-    private function addBulkEmailDestinationParams(map<string> parameters, BulkEmailDestination[] bulkEmailDestinations)
+    private isolated function addBulkEmailDestinationParams(map<string> parameters, BulkEmailDestination[] bulkEmailDestinations)
             returns error? {
         int bulkEmailDestinationNumber = 1;
         foreach BulkEmailDestination bulkEmailDestination in bulkEmailDestinations {
@@ -336,7 +336,7 @@ public type Client client object {
         }
     }
 
-    private function addReplacementTagsParams(map<string> parameters, json[] replacementTags, string bulkDestNumString)
+    private isolated function addReplacementTagsParams(map<string> parameters, json[] replacementTags, string bulkDestNumString)
             returns error? {
         int i = 1;
         foreach json tag in replacementTags {
@@ -350,7 +350,7 @@ public type Client client object {
         }
     }
 
-    private function addDestinationParams(map<string> parameters, json destinations, string bulkDestNumString)
+    private isolated function addDestinationParams(map<string> parameters, json destinations, string bulkDestNumString)
             returns error? {
         string[]? bcc = <string[]?>(check destinations?.bcc);
         string[]? cc = <string[]?>(check destinations?.cc);
@@ -385,7 +385,7 @@ public type Client client object {
         }
     }
 
-    private function addReplyToAddressParams(map<string> parameters, string[] replyToAddresses) returns error? {
+    private isolated function addReplyToAddressParams(map<string> parameters, string[] replyToAddresses) returns error? {
         int i = 1;
         foreach var address in replyToAddresses {
             string addressNumber = i.toString();
@@ -395,7 +395,7 @@ public type Client client object {
         }
     }
 
-    private function buildPayload(map<string> parameters) returns string {
+    private isolated function buildPayload(map<string> parameters) returns string {
         string payload = "";
         int parameterNumber = 1;
         foreach var [key, value] in parameters.entries() {
@@ -408,7 +408,7 @@ public type Client client object {
         return payload;
     }
 
-    private function generatePOSTRequest(string canonicalUri, string payload)
+    private isolated function generatePOSTRequest(string canonicalUri, string payload)
             returns http:Request|Error {
         time:Time|error time = time:toTimeZone(time:currentTime(), GMT);
         string|error amzDate;
@@ -419,12 +419,12 @@ public type Client client object {
             if (amzDate is string && dateStamp is string) {
                 string requestParameters =  payload;
                 string canonicalQuerystring = "";
-                string canonicalHeaders = string `${HEADER_CONTENT_TYPE}:${CONTENT_TYPE}\n${HEADER_HOST}:${self.host}\n${HEADER_X_AMZ_DATE}:${amzDate}\n`;
+                string canonicalHeaders = string `${HEADER_CONTENT_TYPE}:${CONTENT_TYPE}${"\n"}${HEADER_HOST}:${self.host}${"\n"}${HEADER_X_AMZ_DATE}:${amzDate}${"\n"}`;
                 string signedHeaders = string `${HEADER_CONTENT_TYPE};${HEADER_HOST};${HEADER_X_AMZ_DATE}`;
                 string payloadHash = array:toBase16(crypto:hashSha256(requestParameters.toBytes())).toLowerAscii();
-                string canonicalRequest = string `${POST}\n${canonicalUri}\n${canonicalQuerystring}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHash}`;
+                string canonicalRequest = string `${POST}${"\n"}${canonicalUri}${"\n"}${canonicalQuerystring}${"\n"}${canonicalHeaders}${"\n"}${signedHeaders}${"\n"}${payloadHash}`;
                 string credentialScope = string `${dateStamp}/${self.region}/${SES_SERVICE_NAME}/aws4_request`;
-                string stringToSign =  string `${ALGORITHM}\n${amzDate}\n${credentialScope}\n${array:toBase16(crypto:hashSha256(canonicalRequest.toBytes())).toLowerAscii()}`;
+                string stringToSign =  string `${ALGORITHM}${"\n"}${amzDate}${"\n"}${credentialScope}${"\n"}${array:toBase16(crypto:hashSha256(canonicalRequest.toBytes())).toLowerAscii()}`;
                 byte[] signingKey = self.getSignatureKey(self.secretKey, dateStamp, self.region, SES_SERVICE_NAME);
                 string signature = array:toBase16(crypto:hmacSha256(stringToSign.toBytes(), signingKey)).toLowerAscii();
                 string authorizationHeader = string `${ALGORITHM} Credential=${self.accessKey}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
@@ -455,11 +455,11 @@ public type Client client object {
         }
     }  
 
-    private function sign(byte[] key, string msg) returns byte[] {
+    private isolated function sign(byte[] key, string msg) returns byte[] {
         return crypto:hmacSha256(msg.toBytes(), key);
     }
 
-    private function getSignatureKey(string secretKey, string datestamp, string region, string serviceName)
+    private isolated function getSignatureKey(string secretKey, string datestamp, string region, string serviceName)
             returns byte[] {
         string awskey = (AWS4 + secretKey);
         byte[] kDate = self.sign(awskey.toBytes(), datestamp);
@@ -469,7 +469,7 @@ public type Client client object {
         return kSigning;
     }
 
-};
+}
 
 # Email message to be sent
 public type Email email:Email;

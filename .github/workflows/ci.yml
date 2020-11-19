@@ -1,0 +1,26 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Ballerina Build
+        uses: ballerina-platform/ballerina-action/@swan-lake-connector-release
+        with:
+            args:
+                build -a -c  --sourceroot ses-ballerina
+        env:
+          ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+          SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
+          REGION: ${{ secrets.REGION }}
+          VERIFY_ADDRESS: ${{ secrets.VERIFY_ADDRESS }}
+          SEND_FROM_ADDRESS: ${{ secrets.SEND_FROM_ADDRESS }}
+          SEND_TO_ADDRESS: ${{ secrets.SEND_TO_ADDRESS }}
+          TEMPLATED_SEND_FROM_ADDRESS: ${{ secrets.TEMPLATED_SEND_FROM_ADDRESS }}
+          TEMPLATED_SEND_TO_ADDRESS: ${{ secrets.TEMPLATED_SEND_TO_ADDRESS }}
+          TEMPLATED_SEND_CC_ADDRESS: ${{ secrets.TEMPLATED_SEND_CC_ADDRESS }}
