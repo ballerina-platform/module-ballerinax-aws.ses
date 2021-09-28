@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="48px" height="48px" viewBox="0 0 48 48" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>F6FADBBE-F4D6-4880-8682-A4A5E87E3F1D</title>
+    <g id="UI-kit" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Connectors" transform="translate(-220.000000, -2472.000000)" fill-rule="nonzero">
+            <g id="Connector/Ably-Copy-151" transform="translate(220.000000, 2472.000000)">
+                <g id="aws-ses" transform="translate(3.000000, 0.000000)">
+                    <polyline id="Path" fill="#876929" points="9.69842188 7.65325973 0 23.1533535 9.69842188 38.6560197 9.86754688 38.5349554 9.74342578 7.68509338 9.69842188 7.65325973"></polyline>
+                    <polyline id="Path" fill="#D9A741" points="20.5299492 35.8699322 9.69842188 38.6560197 9.69842188 7.65325973 20.5299492 10.4387041 20.5299492 35.8699322"></polyline>
+                    <polyline id="Path" fill="#876929" points="40.9966367 11.5546504 35.775543 12.4213939 23.7892891 0 17.8303555 2.61936279 18.6164023 4.09094563 14.3990078 5.78327394 14.3990078 44.920657 20.5297891 48 20.6318086 47.9197728 20.5374766 7.68798735 33.532875 27.458292 40.9966367 11.5546504"></polyline>
+                    <polyline id="Path" fill="#D9A741" points="23.7892891 0 39.7535039 8.01259412 33.440625 19.5112945 23.7892891 0"></polyline>
+                    <polyline id="Path" fill="#D9A741" points="40.9959961 11.5546504 41 37.7174094 20.5299492 48 20.5272266 3.32533026 33.440625 26.8454139 40.9959961 11.5546504"></polyline>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

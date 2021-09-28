@@ -1,38 +1,22 @@
-name: Ballerina AWS SES module build
+name: CI
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
-  ubuntu-build:
+    build:
 
-    runs-on: ubuntu-latest
+        runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v1
-      - name: Set up JDK 1.8
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
-      - name: Build with Gradle
-        env:
-          GITHUB_TOKEN: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
-          packageUser: ${{ github.actor }}
-          packagePAT: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
-        run: ./gradlew build
-
-  windows-build:
-
-    runs-on: windows-latest
-
-    steps:
-      - uses: actions/checkout@v1
-      - name: Set up JDK 1.8
-        uses: actions/setup-java@v1
-        with:
-          java-version: 1.8
-      - name: Build with Gradle
-        env:
-          GITHUB_TOKEN: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
-          packageUser: ${{ github.actor }}
-          packagePAT: ${{ secrets.BALLERINA_STDLIB_TOKEN }}
-        run: ./gradlew.bat build
+        steps:
+            - uses: actions/checkout@v2
+            - name: Ballerina Build
+              uses: ballerina-platform/ballerina-action/@nightly
+              with:
+                  args:
+                      build -c ./ses
+              env:
+                  ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
+                  SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
+                  SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+                  RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+                  EMAIL_IDENTITY: ${{ secrets.EMAIL_IDENTITY }}

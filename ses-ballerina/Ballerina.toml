@@ -1,6 +1,0 @@
-[project]
-org-name = "ballerinax"
-version = "0.9.0"
-
-[platform]
-target = "java8"
