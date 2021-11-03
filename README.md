@@ -23,11 +23,11 @@ For more information, go to the module(s).
 Execute the commands below to build from the source:
 * To build the package:
    ```   
-   bal build -c ./ses
+   bal pack ./ses
    ```
-* To build the package without tests:
+* To run tests after build:
    ```
-   bal build -c --skip-tests ./ses
+   bal test ./ses
    ```
 ## Contributing to Ballerina
  
