@@ -25,7 +25,7 @@ import ballerina/http;
 # + securityToken - AWS SES Security token
 # + region - AWS SES Region
 # + host - AWS SES host name
-@display {label: "Amazon SES Client", iconPath: "resources/aws.ses.svg"}
+@display {label: "Amazon SES Client", iconPath: "icon.png"}
 public isolated client class Client {
 
     private final http:Client awsSesClient;
