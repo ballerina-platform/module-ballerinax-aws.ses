@@ -86,7 +86,7 @@ function testGetContactList() returns error? {
 }
 function testListContactLists() returns error? {
     log:printInfo("Testing ListContactLists");
-    ContactLists response =  check amazonSesClient->listContactLists();
+    _ =  check amazonSesClient->listContactLists();
 }
 
 @test:Config {
@@ -136,7 +136,7 @@ function testGetContact() returns error? {
 }
 function testListContacts() returns error? {
     log:printInfo("Testing ListContacts");
-    Contacts  response = check amazonSesClient-> listContacts(contactListName);
+    _ = check amazonSesClient-> listContacts(contactListName);
 }
 
 @test:Config {
@@ -192,7 +192,7 @@ function testUpdateCustomVeriﬁcationEmailTemplate() returns error? {
 
 function testListCustomVeriﬁcationEmailTemplates() returns error? {
     log:printInfo("Testing ListCustomVeriﬁcationEmailTemplates");
-    CustomVerificationTempListPage response = check amazonSesClient->listCustomVeriﬁcationEmailTemplates();
+    _ = check amazonSesClient->listCustomVeriﬁcationEmailTemplates();
 }
 
 @test:Config {
@@ -246,7 +246,7 @@ function testUpdateEmailTemplate() returns error? {
 
 function testListEmailTemplates() returns error? {
     log:printInfo("Testing ListEmailTemplates");
-    EmailTemplateListPage response = check amazonSesClient->listEmailTemplates();
+    _ = check amazonSesClient->listEmailTemplates();
 }
 
 @test:Config {}
@@ -264,7 +264,7 @@ function testCreateEmailIdentity() returns error? {
 }
 function testGetEmailIdentity() returns error? {
     log:printInfo("Testing GetEmailIdentity");
-    EmailIdentityInfo response = check amazonSesClient->getEmailIdentity(emailIdentity);
+    _ = check amazonSesClient->getEmailIdentity(emailIdentity);
 }
 
 @test:Config {
@@ -272,7 +272,7 @@ function testGetEmailIdentity() returns error? {
 }
 function testListEmailIdentities() returns error? {
     log:printInfo("Testing ListEmailIdentities");
-    EmailIdentitiesListPage response = check amazonSesClient->listEmailIdentities();
+    _ = check amazonSesClient->listEmailIdentities();
 }
 
 @test:Config {
