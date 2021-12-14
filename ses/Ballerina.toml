@@ -1,13 +1,13 @@
 [package]
+distribution = "slbeta6"
 org = "ballerinax"
 name = "aws.ses"
-version = "1.0.0"
+version = "1.1.0"
 license= ["Apache-2.0"]
 authors = ["Ballerina"]
 keywords = ["Communication/Email", "Cost/Freemium", "Vendor/Amazon"]
 icon = "icon.png"
 repository = "https://github.com/ballerina-platform/module-ballerinax-aws.ses"
-
 
 [build-options]
 observabilityIncluded = true
