@@ -8,7 +8,7 @@ The `ballerinax/aws.ses` is a [Ballerina](https://ballerina.io/) connector for A
 ### Compatibility
 |                    | Version         |  
 |--------------------|-----------------|
-| Ballerina Language | Swan Lake Beta3 |
+| Ballerina Language | Swan Lake Beta6 |
 | Amazon SES API     | v2              |
 
 ## Report issues
