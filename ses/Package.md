@@ -6,10 +6,10 @@ The `ballerinax/aws.ses` is a [Ballerina](https://ballerina.io/) connector for A
 * Perform AWS SES related operations programmatically. The `ballerinax/aws.ses` module provides this capability.
 
 ### Compatibility
-|                    | Version         |  
-|--------------------|-----------------|
-| Ballerina Language | Swan Lake Beta6 |
-| Amazon SES API     | v2              |
+|                    | Version            |  
+|--------------------|--------------------|
+| Ballerina Language | Swan Lake 2201.0.0 |
+| Amazon SES API     | v2                 |
 
 ## Report issues
 To report bugs, request new features, start new discussions, view project boards, etc., go to the [Ballerina Extended Library repository](https://github.com/ballerina-platform/ballerina-extended-library)
