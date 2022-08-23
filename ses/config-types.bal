@@ -19,10 +19,10 @@
 public type ConnectionConfig record {|
     # Amazon account credentials
     AwsCredentials|AwsTemporaryCredentials awsCredentials;
-    # # Region of SES resource
+    # Region of SES resource
     string region = DEFAULT_REGION;
     # The HTTP version understood by the client
-    HttpVersion httpVersion = HTTP_V2_0;
+    HttpVersion httpVersion = HTTP_V1_1;
     # Configurations related to HTTP/1.x protocol
     ClientHttp1Settings http1Settings = {};
     # Configurations related to HTTP/2 protocol
@@ -79,7 +79,7 @@ public type AwsTemporaryCredentials record {
 public type ClientHttp1Settings record {|
     KeepAlive keepAlive = KEEPALIVE_AUTO;
     Chunking chunking = CHUNKING_AUTO;
-    ProxyConfig proxy = {};
+    ProxyConfig proxy?;
 |};
 
 # Defines the possible values for the keep-alive configuration in service and client endpoints.
