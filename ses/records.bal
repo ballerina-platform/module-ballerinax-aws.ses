@@ -14,35 +14,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-# Represents AWS client configuration.
-#
-# + awsCredentials - AWS credentials  
-# + region - AWS region  
-public type ConnectionConfig record {
-    AwsCredentials|AwsTemporaryCredentials awsCredentials;
-    string region = DEFAULT_REGION;
-};
-
-# Represents AWS credentials.
-#
-# + accessKeyId - AWS access key  
-# + secretAccessKey - AWS secret key
-public type AwsCredentials record {
-    string accessKeyId;
-    string secretAccessKey;
-};
-
-# Represents AWS temporary credentials.
-#
-# + accessKeyId - AWS access key  
-# + secretAccessKey - AWS secret key  
-# + securityToken - AWS secret token
-public type AwsTemporaryCredentials record {
-    string accessKeyId;
-    string secretAccessKey;
-    string securityToken;   
-};
-
 //AWS SES related record fields are using Titlecase to support the record mapping.
 
 # Represents the request to create contact list.

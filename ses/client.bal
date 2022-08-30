@@ -39,18 +39,32 @@ public isolated client class Client {
     # Create an AWS account and obtain tokens following [this guide]
     # (https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html).
     #
-    # + amazonSesconfiguration - The configurations to be used when initializing the client
-    # + httpConfig - HTTP Configuration
+    # + config - The configurations to be used when initializing the client
     # + return - `http:Error` in case of failure to initialize or `null` if successfully initialized
-    public isolated function init(ConnectionConfig amazonSesconfiguration, http:ClientConfiguration httpConfig = {}) 
-                                  returns error? {
-        self.accessKey = amazonSesconfiguration.awsCredentials.accessKeyId;
-        self.secretKey = amazonSesconfiguration.awsCredentials.secretAccessKey;
-        self.securityToken = amazonSesconfiguration.awsCredentials?.securityToken;
-        self.region = amazonSesconfiguration.region;
+    public isolated function init(ConnectionConfig config) returns error? {
+        self.accessKey = config.awsCredentials.accessKeyId;
+        self.secretKey = config.awsCredentials.secretAccessKey;
+        self.securityToken = config.awsCredentials?.securityToken;
+        self.region = config.region;
+        http:ClientConfiguration httpClientConfig = {
+            httpVersion: config.httpVersion,
+            http1Settings: {...config.http1Settings},
+            http2Settings: config.http2Settings,
+            timeout: config.timeout,
+            forwarded: config.forwarded,
+            poolConfig: config.poolConfig,
+            cache: config.cache,
+            compression: config.compression,
+            circuitBreaker: config.circuitBreaker,
+            retryConfig: config.retryConfig,
+            responseLimits: config.responseLimits,
+            secureSocket: config.secureSocket,
+            proxy: config.proxy,
+            validation: config.validation
+        };
         self.host = AWS_SERVICE + DOT + self.region + DOT+ AWS_HOST;
         string endpoint = HTTPS + self.host;
-        self.awsSesClient = check new (endpoint, httpConfig);
+        self.awsSesClient = check new (endpoint, httpClientConfig);
     }
 
     # Creates a contact list.
