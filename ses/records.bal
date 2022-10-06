@@ -14,6 +14,51 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerinax/'client.config;
+
+# Represents the AWS SES Connector configurations.
+@display {label: "Connection Config"}
+public type ConnectionConfig record {|
+    *config:ConnectionConfig;
+    never auth?;
+    # AWS credentials
+    AwsCredentials|AwsTemporaryCredentials awsCredentials;
+    # AWS Region
+    string region = DEFAULT_REGION;
+|};
+
+# Represents AWS credentials.
+#
+# + accessKeyId - AWS access key  
+# + secretAccessKey - AWS secret key
+public type AwsCredentials record {
+    string accessKeyId;
+    @display {
+        label: "",
+        kind: "password"
+    }
+    string secretAccessKey;
+};
+
+# Represents AWS temporary credentials.
+#
+# + accessKeyId - AWS access key  
+# + secretAccessKey - AWS secret key  
+# + securityToken - AWS secret token
+public type AwsTemporaryCredentials record {
+    string accessKeyId;
+    @display {
+        label: "",
+        kind: "password"
+    }
+    string secretAccessKey;
+    @display {
+        label: "",
+        kind: "password"
+    }
+    string securityToken;
+};
+
 //AWS SES related record fields are using Titlecase to support the record mapping.
 
 # Represents the request to create contact list.

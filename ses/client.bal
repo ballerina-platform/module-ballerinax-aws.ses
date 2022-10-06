@@ -15,6 +15,7 @@
 // under the License.
 
 import ballerina/http;
+import ballerinax/'client.config;
 
 # The Ballerina AWS SES connector provides the capability to access AWS Simple Email Service related operations.
 # This connector lets you to to send email messages to your customers.
@@ -46,22 +47,7 @@ public isolated client class Client {
         self.secretKey = config.awsCredentials.secretAccessKey;
         self.securityToken = config.awsCredentials?.securityToken;
         self.region = config.region;
-        http:ClientConfiguration httpClientConfig = {
-            httpVersion: config.httpVersion,
-            http1Settings: {...config.http1Settings},
-            http2Settings: config.http2Settings,
-            timeout: config.timeout,
-            forwarded: config.forwarded,
-            poolConfig: config.poolConfig,
-            cache: config.cache,
-            compression: config.compression,
-            circuitBreaker: config.circuitBreaker,
-            retryConfig: config.retryConfig,
-            responseLimits: config.responseLimits,
-            secureSocket: config.secureSocket,
-            proxy: config.proxy,
-            validation: config.validation
-        };
+        http:ClientConfiguration httpClientConfig = check config:constructHTTPClientConfig(config);
         self.host = AWS_SERVICE + DOT + self.region + DOT+ AWS_HOST;
         string endpoint = HTTPS + self.host;
         self.awsSesClient = check new (endpoint, httpClientConfig);
