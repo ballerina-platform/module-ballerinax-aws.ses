@@ -1,8 +1,8 @@
 [package]
-distribution = "2201.3.0"
+distribution = "2201.4.1"
 org = "ballerinax"
 name = "aws.ses"
-version = "2.0.0"
+version = "2.1.0"
 license= ["Apache-2.0"]
 authors = ["Ballerina"]
 keywords = ["Communication/Email", "Cost/Freemium", "Vendor/Amazon"]
