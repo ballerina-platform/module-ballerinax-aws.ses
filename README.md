@@ -1,6 +1,7 @@
 # Ballerina Amazon SES Connector 
 [![Build Status](https://github.com/ballerina-platform/module-ballerinax-aws.ses/workflows/CI/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions?query=workflow%3ACI)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerinax-aws.ses.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses./commits/master)
+[![GraalVM Check](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions/workflows/build-with-bal-test-native.yml/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions/workflows/build-with-bal-test-native.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 [Amazon Simple Email Service (Amazon SES)](https://aws.amazon.com/ses/) is a cost-effective, flexible, and scalable email service that enables developers to send mail from within any application. You can configure Amazon SES quickly to support several email use cases, including transactional, marketing, or mass email communications. Amazon SES's flexible IP deployment and email authentication options help drive higher deliverability and protect sender reputation, while sending analytics measure the impact of each email. With Amazon SES, you can send email securely, globally, and at scale.
