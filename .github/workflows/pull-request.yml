@@ -18,10 +18,12 @@ jobs:
               uses: ballerina-platform/ballerina-action/@nightly
               with:
                   args:
-                      test ./ses
+                      test --test-report --code-coverage --coverage-format=xml ./ses
               env:
                   ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY_ID }}
                   SECRET_ACCESS_KEY: ${{ secrets.SECRET_ACCESS_KEY }}
                   SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
                   RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
                   EMAIL_IDENTITY: ${{ secrets.EMAIL_IDENTITY }}
+            - name: Upload coverage reports to Codecov
+              uses: codecov/codecov-action@v3

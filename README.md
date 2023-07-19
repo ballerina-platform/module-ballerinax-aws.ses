@@ -1,5 +1,6 @@
 # Ballerina Amazon SES Connector 
 [![Build Status](https://github.com/ballerina-platform/module-ballerinax-aws.ses/workflows/CI/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions?query=workflow%3ACI)
+[![codecov](https://codecov.io/gh/ballerina-platform/module-ballerinax-aws.ses/branch/master/graph/badge.svg)](https://codecov.io/gh/ballerina-platform/module-ballerinax-aws.ses)
 [![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerinax-aws.ses.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses./commits/master)
 [![GraalVM Check](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions/workflows/build-with-bal-test-native.yml/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions/workflows/build-with-bal-test-native.yml)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
