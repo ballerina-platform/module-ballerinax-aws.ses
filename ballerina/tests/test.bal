@@ -342,9 +342,9 @@ function testSendBulkEmail() {
             }
         }
     };
-    MessageSentResponse|error response =  amazonSesClient->sendBulkEmail(req);
-    if response is MessageSentResponse {
-        log:printInfo(response?.MessageId.toString());
+    BulkEmailResponse|error response =  amazonSesClient->sendBulkEmail(req);
+    if response is BulkEmailResponse {
+        log:printInfo(response?.BulkEmailEntryResults.toString());
     }
 }
 
