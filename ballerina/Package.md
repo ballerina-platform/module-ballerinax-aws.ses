@@ -1,15 +1,15 @@
-Connects to AWS SES from Ballerina
+## Overview
 
-## Package overview
+[Amazon Simple Email Service (SES)](https://aws.amazon.com/ses/) is a cost-effective, flexible, and scalable email service that enables developers to send mail from within any application.
 
-The `ballerinax/aws.ses` is a [Ballerina](https://ballerina.io/) connector for AWS SES. It is comprised of the following capabilities.
-* Perform AWS SES related operations programmatically. The `ballerinax/aws.ses` module provides this capability.
+The AWS SES connector offers APIs to perform AWS SES related operations programmatically, enabling seamless email delivery and management.
 
-### Compatibility
-|                    | Version            |  
-|--------------------|--------------------|
-| Ballerina Language | Swan Lake 2201.3.0 |
-| Amazon SES API     | v2                 |
+### Key Features
+
+- High-scale email sending and receiving
+- Support for Amazon SES API v2
+- Flexible email management options
+- Efficient tracking of email delivery and performance
 
 ## Report issues
 To report bugs, request new features, start new discussions, view project boards, etc., go to the [Ballerina Extended Library repository](https://github.com/ballerina-platform/ballerina-extended-library)
