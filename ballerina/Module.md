@@ -1,8 +1,16 @@
 ## Overview
-The Ballerina AWS SES connector provides the capability to programatically handle [AWS SES](https://aws.amazon.com/ses/) related operations.
+The AWS SES connector provides the capability to programatically handle [AWS SES](https://aws.amazon.com/ses/) related operations.
 
 This module supports [Amazon SES REST API v2](https://docs.aws.amazon.com/ses/latest/APIReference-V2/Welcome.html).
  
+
+### Key Features
+
+- Send transactional and bulk emails via AWS SES
+- Manage email identities and sending authorization
+- Access email sending statistics and bounce data
+- Support for email templates and configuration sets
+
 ## Prerequisites
 Before using this connector in your Ballerina application, complete the following:
 1. Create an [AWS account](https://portal.aws.amazon.com/billing/signup?nc2=h_ct&src=default&redirect_url=https%3A%2F%2Faws.amazon.com%2Fregistration-confirmation#/start)
