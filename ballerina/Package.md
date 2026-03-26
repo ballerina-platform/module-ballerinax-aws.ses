@@ -6,10 +6,10 @@ The AWS SES connector offers APIs to perform AWS SES related operations programm
 
 ### Key Features
 
-- High-scale email sending and receiving
-- Support for Amazon SES API v2
-- Flexible email management options
-- Efficient tracking of email delivery and performance
+- Send transactional and bulk emails via AWS SES
+- Manage email identities and sending authorization
+- Access email sending statistics and bounce data
+- Support for email templates and configuration sets
 
 ## Report issues
 To report bugs, request new features, start new discussions, view project boards, etc., go to the [Ballerina Extended Library repository](https://github.com/ballerina-platform/ballerina-extended-library)
