@@ -1,5 +1,8 @@
 ## Overview
-The AWS SES connector provides the capability to programatically handle [AWS SES](https://aws.amazon.com/ses/) related operations.
+
+[Amazon Simple Email Service (SES)](https://aws.amazon.com/ses/) is a cost-effective, flexible, and scalable email service that enables developers to send mail from within any application.
+
+The AWS SES connector provides the capability to programmatically handle [AWS SES](https://aws.amazon.com/ses/) related operations.
 
 This module supports [Amazon SES REST API v2](https://docs.aws.amazon.com/ses/latest/APIReference-V2/Welcome.html).
  
