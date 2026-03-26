@@ -5,7 +5,7 @@ name = "aws.ses"
 version = "2.0.0"
 license= ["Apache-2.0"]
 authors = ["Ballerina"]
-keywords = ["Communication/Email", "Cost/Freemium", "Vendor/Amazon"]
+keywords = ["Communication/Email", "Cost/Freemium", "Vendor/Amazon", "Area/Marketing & Social Media", "Type/Connector"]
 icon = "icon.png"
 repository = "https://github.com/ballerina-platform/module-ballerinax-aws.ses"
 
