@@ -11,6 +11,5 @@ jobs:
     uses: ballerina-platform/ballerina-library/.github/workflows/daily-build-connector-template.yml@main
     secrets:
       BALLERINA_BOT_TOKEN: ${{ secrets.BALLERINA_BOT_TOKEN }}
-      BALLERINA_BOT_USERNAME: ${{ secrets.BALLERINA_BOT_USERNAME }}
     with:
       repo-name: module-ballerinax-aws.ses
