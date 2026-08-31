@@ -104,7 +104,7 @@ ses:Client ses = check new ({
 
 ### Step 3: Invoke the connector operation
 
-Send an email from a verified identity, then list the contacts it was sent to.
+Send an email from a verified identity, then list the contacts already on the `Newsletter` contact list — `sendEmail` does not add its recipient to a list.
 
 ```ballerina
 import ballerina/io;

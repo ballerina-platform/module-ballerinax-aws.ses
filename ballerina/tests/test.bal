@@ -19,10 +19,6 @@ import ballerina/test;
 import ballerinax/aws;
 import ballerinax/aws.auth;
 
-// ---------------------------------------------------------------------------
-// Data binding — needs no backend at all
-// ---------------------------------------------------------------------------
-
 @test:Config {groups: ["dataBinding"]}
 isolated function testRequestUsesWireFieldNames() {
     CreateContactListInput request = {
@@ -197,7 +193,7 @@ isolated function testPaginationParamsOmitUnsetValues() {
 
 @test:Config {groups: ["operations"]}
 function testGetContactList() returns error? {
-    ContactListDetails details = check ses->getContactList(testContactListName);
+    ContactListDetails details = check ses->getContactList(MOCK_CONTACT_LIST_NAME);
     test:assertTrue(details.contactListName is string);
 }
 
@@ -237,13 +233,13 @@ function testListEmailTemplates() returns error? {
 
 @test:Config {groups: ["operations"]}
 function testGetEmailIdentity() returns error? {
-    EmailIdentityDetails identity = check ses->getEmailIdentity(testSenderEmail);
+    EmailIdentityDetails identity = check ses->getEmailIdentity(MOCK_SENDER_EMAIL);
     test:assertTrue(identity.verificationStatus is VerificationStatus);
 }
 
 @test:Config {groups: ["operations"]}
 function testGetEmailTemplate() returns error? {
-    EmailTemplateDetails template = check ses->getEmailTemplate(testTemplateName);
+    EmailTemplateDetails template = check ses->getEmailTemplate(MOCK_TEMPLATE_NAME);
     EmailTemplateContent content = check template.templateContent.ensureType();
     test:assertTrue(content.subject is string);
 }
@@ -251,15 +247,15 @@ function testGetEmailTemplate() returns error? {
 @test:Config {groups: ["operations"]}
 function testGetCustomVerificationEmailTemplate() returns error? {
     CustomVerificationEmailTemplateDetails template =
-        check ses->getCustomVerificationEmailTemplate(testVerificationTemplateName);
+        check ses->getCustomVerificationEmailTemplate(MOCK_VERIFICATION_TEMPLATE_NAME);
     test:assertTrue(template.fromEmailAddress is string);
 }
 
 @test:Config {groups: ["operations"]}
 function testSendEmail() returns error? {
     SendEmailOutput result = check ses->sendEmail({
-        fromEmailAddress: testSenderEmail,
-        destination: {toAddresses: [testRecipientEmail]},
+        fromEmailAddress: MOCK_SENDER_EMAIL,
+        destination: {toAddresses: [MOCK_RECIPIENT_EMAIL]},
         content: {
             simple: {
                 subject: {data: "Ballerina SES connector test"},
@@ -276,11 +272,11 @@ function testSendEmail() returns error? {
 @test:Config {groups: ["operations"]}
 function testSendBulkEmail() returns error? {
     SendBulkEmailOutput result = check ses->sendBulkEmail({
-        fromEmailAddress: testSenderEmail,
+        fromEmailAddress: MOCK_SENDER_EMAIL,
         defaultContent: {
-            template: {templateName: testTemplateName, templateData: "{\"orderId\":\"1\"}"}
+            template: {templateName: MOCK_TEMPLATE_NAME, templateData: "{\"orderId\":\"1\"}"}
         },
-        bulkEmailEntries: [{destination: {toAddresses: [testRecipientEmail]}}]
+        bulkEmailEntries: [{destination: {toAddresses: [MOCK_RECIPIENT_EMAIL]}}]
     });
     test:assertTrue(result.bulkEmailEntryResults.length() >= 1);
 }
@@ -289,9 +285,9 @@ function testSendBulkEmail() returns error? {
 // Mock-only — what only the mock can observe about the request on the wire
 // ---------------------------------------------------------------------------
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testRequestIsSignedWithSigV4() returns error? {
-    _ = check ses->getContactList(testContactListName);
+    _ = check ses->getContactList(MOCK_CONTACT_LIST_NAME);
     RecordedRequest request = getLastRequest();
     test:assertTrue(request.authorization.startsWith("AWS4-HMAC-SHA256 "),
             string `expected a SigV4 Authorization header, found: ${request.authorization}`);
@@ -302,9 +298,9 @@ function testRequestIsSignedWithSigV4() returns error? {
     test:assertTrue(request.authorization.includes("Signature="));
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testGetRequestCarriesNoContentType() returns error? {
-    _ = check ses->getContactList(testContactListName);
+    _ = check ses->getContactList(MOCK_CONTACT_LIST_NAME);
     RecordedRequest request = getLastRequest();
     test:assertEquals(request.method, "GET");
     // A `content-type` that was not signed would break the signature, so a body-less request must not carry one.
@@ -312,30 +308,30 @@ function testGetRequestCarriesNoContentType() returns error? {
     test:assertEquals(request.payload, "");
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testPostRequestCarriesJsonContentType() returns error? {
-    check ses->createContactList({contactListName: testContactListName, description: "test"});
+    check ses->createContactList({contactListName: MOCK_CONTACT_LIST_NAME, description: "test"});
     RecordedRequest request = getLastRequest();
     test:assertEquals(request.method, "POST");
     test:assertEquals(request.contentType, "application/json");
     test:assertEquals(request.rawPath, "/v2/email/contact-lists");
     test:assertEquals(request.payload,
-            string `{"ContactListName":"${testContactListName}", "Description":"test"}`);
+            string `{"ContactListName":"${MOCK_CONTACT_LIST_NAME}", "Description":"test"}`);
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testPathParametersArePercentEncoded() returns error? {
     // An email address carries `@`, and may carry `+` — both have to be encoded, or the signature will not match
     // the request the service receives.
-    _ = check ses->getContact(testContactListName, testContactEmail);
+    _ = check ses->getContact(MOCK_CONTACT_LIST_NAME, MOCK_CONTACT_EMAIL);
     RecordedRequest request = getLastRequest();
-    test:assertEquals(request.rawPath,
-            "/v2/email/contact-lists/ballerina-ses-test-list/contacts/reader%2Bballerina%40example.com");
+    test:assertEquals(request.rawPath, string `/v2/email/contact-lists/${MOCK_CONTACT_LIST_NAME}` +
+            "/contacts/reader%2Bballerina%40example.com");
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testListContactsUsesPostToListSubResource() returns error? {
-    stream<Contact, Error?> contacts = ses->listContacts(testContactListName, {
+    stream<Contact, Error?> contacts = ses->listContacts(MOCK_CONTACT_LIST_NAME, {
         filter: {filteredStatus: OPT_IN}
     });
     Contact[] found = [];
@@ -346,14 +342,14 @@ function testListContactsUsesPostToListSubResource() returns error? {
     RecordedRequest request = getLastRequest();
     // `ListContacts` is the one list operation that is a POST with a body; 2.x sent a GET, which SES rejects.
     test:assertEquals(request.method, "POST");
-    test:assertEquals(request.rawPath, "/v2/email/contact-lists/ballerina-ses-test-list/contacts/list");
+    test:assertEquals(request.rawPath, string `/v2/email/contact-lists/${MOCK_CONTACT_LIST_NAME}/contacts/list`);
     test:assertTrue(request.payload.includes("\"Filter\""));
     test:assertTrue(request.payload.includes("\"FilteredStatus\":\"OPT_IN\""));
     test:assertEquals(found.length(), 1);
-    test:assertEquals(found[0].emailAddress, "reader@example.com");
+    test:assertEquals(found[0].emailAddress, MOCK_RECIPIENT_EMAIL);
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testListPaginatesAcrossPagesIncludingAnEmptyOne() returns error? {
     resetMock();
     stream<ContactList, Error?> contactLists = ses->listContactLists();
@@ -368,7 +364,7 @@ function testListPaginatesAcrossPagesIncludingAnEmptyOne() returns error? {
     test:assertEquals(getLastRequest().callCount, 3);
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testPageSizeIsSentAsAQueryParameter() returns error? {
     stream<EmailTemplateMetadata, Error?> templates = ses->listEmailTemplates({pageSize: 7});
     check from EmailTemplateMetadata _ in templates
@@ -377,19 +373,19 @@ function testPageSizeIsSentAsAQueryParameter() returns error? {
     test:assertEquals(getLastRequest().rawPath, "/v2/email/templates?PageSize=7");
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testDeleteUsesDeleteMethod() returns error? {
-    check ses->deleteEmailTemplate(testTemplateName);
+    check ses->deleteEmailTemplate(MOCK_TEMPLATE_NAME);
     RecordedRequest request = getLastRequest();
     test:assertEquals(request.method, "DELETE");
-    test:assertEquals(request.rawPath, "/v2/email/templates/BallerinaSesTestTemplate");
+    test:assertEquals(request.rawPath, string `/v2/email/templates/${MOCK_TEMPLATE_NAME}`);
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testSendEmailPostsToOutboundEmails() returns error? {
     _ = check ses->sendEmail({
-        fromEmailAddress: testSenderEmail,
-        destination: {toAddresses: [testRecipientEmail]},
+        fromEmailAddress: MOCK_SENDER_EMAIL,
+        destination: {toAddresses: [MOCK_RECIPIENT_EMAIL]},
         content: {simple: {subject: {data: "Hello"}, body: {text: {data: "Hello"}}}}
     });
     RecordedRequest request = getLastRequest();
@@ -398,7 +394,7 @@ function testSendEmailPostsToOutboundEmails() returns error? {
     test:assertTrue(request.payload.includes("\"Text\""));
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testServiceFailureIsMappedToError() {
     EmailIdentityDetails|Error result = ses->getEmailIdentity("unknown@example.com");
     if result is EmailIdentityDetails {
@@ -414,22 +410,22 @@ function testServiceFailureIsMappedToError() {
     test:assertEquals(detail.errorMessage, "Email identity unknown@example.com not found.");
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testInitAcceptsAPlainRegionString() returns error? {
     // `region` is `aws:Region|string`, so a region the enum does not yet know about still works.
     Client sesClient = check new ({
-        auth: {accessKeyId: "MOCK_ACCESS_KEY_ID", secretAccessKey: "MOCK_SECRET_ACCESS_KEY"},
+        auth: {accessKeyId: MOCK_ACCESS_KEY_ID, secretAccessKey: MOCK_SECRET_ACCESS_KEY},
         region: "us-west-2",
         endpoint: {customEndpoint: MOCK_ENDPOINT}
     });
-    _ = check sesClient->getContactList(testContactListName);
+    _ = check sesClient->getContactList(MOCK_CONTACT_LIST_NAME);
     test:assertTrue(getLastRequest().authorization.includes("/us-west-2/ses/aws4_request"),
             "the credential scope must name the region the client was configured with");
     check sesClient.close();
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
-function testInitWithDefaultCredentialsChain() {
+@test:Config {groups: ["mock"]}
+function testInitWithDefaultCredentialsChain() returns error? {
     // The default provider chain resolves at init, so an environment with no credentials reports it here rather
     // than at the first request.
     Client|error result = new ({
@@ -440,11 +436,49 @@ function testInitWithDefaultCredentialsChain() {
     if result is error {
         test:assertTrue(result.message().includes("credential") || result.message().includes("Credential"),
                 string `an init failure here must be a credential resolution failure, found: ${result.message()}`);
+        return;
     }
+    // Where the environment does supply credentials, the chain resolves and the provider's refresh threads have to
+    // be released — the suite's `AfterSuite` only closes the shared client, not this one.
+    check result.close();
 }
 
-@test:Config {groups: ["mock"], enable: !isLiveTestEnabled}
+@test:Config {groups: ["mock"]}
 function testCloseReleasesTheCredentialProvider() returns error? {
     Client sesClient = check newMockClient();
+    check sesClient.close();
+}
+
+@test:Config {groups: ["live"], enable: isLiveServer}
+function testLiveListEmailIdentities() returns error? {
+    Client sesClient = check newLiveClient();
+    stream<IdentityInfo, Error?> identities = sesClient->listEmailIdentities({pageSize: 10});
+    int count = 0;
+    check from IdentityInfo identity in identities
+        do {
+            test:assertTrue(identity.identityName is string);
+            count += 1;
+        };
+    test:assertTrue(count >= 1, "the account is expected to have at least one email identity");
+    check sesClient.close();
+}
+
+@test:Config {groups: ["live"], enable: isLiveServer}
+function testLiveSendEmail() returns error? {
+    Client sesClient = check newLiveClient();
+    SendEmailOutput result = check sesClient->sendEmail({
+        fromEmailAddress: senderEmail,
+        destination: {toAddresses: [recipientEmail]},
+        content: {
+            simple: {
+                subject: {data: "Ballerina SES connector test", charset: "UTF-8"},
+                body: {
+                    html: {data: "<html><body><p>Sent by the Ballerina SES connector tests.</p></body></html>"},
+                    text: {data: "Sent by the Ballerina SES connector tests."}
+                }
+            }
+        }
+    });
+    test:assertTrue(result.messageId is string, "Amazon SES must return a message id for an accepted message");
     check sesClient.close();
 }

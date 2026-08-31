@@ -15,9 +15,31 @@
 // under the License.
 
 import ballerina/http;
+import ballerinax/aws;
 
 const int MOCK_PORT = 21098;
 const string MOCK_ENDPOINT = "http://localhost:21098";
+
+const string MOCK_ACCESS_KEY_ID = "MOCK_ACCESS_KEY_ID";
+const string MOCK_SECRET_ACCESS_KEY = "MOCK_SECRET_ACCESS_KEY";
+
+// The mock is reached through the connector's own endpoint override.
+final readonly & aws:EndpointConfig mockEndpoint = {customEndpoint: MOCK_ENDPOINT};
+
+isolated function newMockClient() returns Client|error => new ({
+    region: awsRegion,
+    auth: {accessKeyId: MOCK_ACCESS_KEY_ID, secretAccessKey: MOCK_SECRET_ACCESS_KEY},
+    endpoint: mockEndpoint
+});
+
+// The resources the mock serves. The tests assert against these same constants, so the assertions hold whether the
+// suite runs against the mock or against the live API with the matching resources supplied.
+const string MOCK_SENDER_EMAIL = "sender@example.com";
+const string MOCK_RECIPIENT_EMAIL = "recipient@example.com";
+const string MOCK_CONTACT_LIST_NAME = "ballerina-ses-test-list";
+const string MOCK_CONTACT_EMAIL = "reader+ballerina@example.com";
+const string MOCK_TEMPLATE_NAME = "BallerinaSesTestTemplate";
+const string MOCK_VERIFICATION_TEMPLATE_NAME = "BallerinaSesTestVerification";
 
 # What the mock recorded about the request it last served, so that tests can assert on what the connector actually
 # put on the wire — the signature, the content type, the encoded path, and the payload.
@@ -105,14 +127,12 @@ isolated function contactListPage(string? nextToken) returns json {
     }
 }
 
-isolated service / on new http:Listener(MOCK_PORT) {
+listener http:Listener mockListener = new (MOCK_PORT);
 
-    # Serves every Amazon SES operation the tests exercise. A single catch-all resource is used rather than one
-    # resource per path, so that the mock sees the request target exactly as the connector encoded it.
-    #
-    # + request - The request the connector sent
-    # + path - The path segments of the request
-    # + return - The mocked response
+// Serves every Amazon SES operation the tests exercise. A single catch-all resource is used rather than one
+// resource per path, so that the mock sees the request target exactly as the connector encoded it.
+isolated service / on mockListener {
+
     isolated resource function 'default [string... path](http:Request request) returns http:Response|error {
         recordRequest(request);
         string route = string:'join("/", ...path);
@@ -139,14 +159,14 @@ isolated service / on new http:Listener(MOCK_PORT) {
         } else if operation == "contact-lists" && method == "POST" {
             payload = {};
         } else if operation.startsWith("contact-lists/") && operation.endsWith("/contacts/list") {
-            payload = {"Contacts": [{"EmailAddress": "reader@example.com", "UnsubscribeAll": false}]};
+            payload = {"Contacts": [{"EmailAddress": MOCK_RECIPIENT_EMAIL, "UnsubscribeAll": false}]};
         } else if operation.startsWith("contact-lists/") && operation.endsWith("/contacts") {
             payload = {};
         } else if operation.startsWith("contact-lists/") && operation.includes("/contacts/") {
             // A single contact: read, replaced, or removed.
             payload = method == "GET" ? {
-                    "EmailAddress": "reader@example.com",
-                    "ContactListName": "ballerina-ses-test-list",
+                    "EmailAddress": MOCK_RECIPIENT_EMAIL,
+                    "ContactListName": MOCK_CONTACT_LIST_NAME,
                     "UnsubscribeAll": false,
                     "TopicPreferences": [{"TopicName": "updates", "SubscriptionStatus": "OPT_IN"}],
                     "CreatedTimestamp": 1735689600
@@ -154,7 +174,7 @@ isolated service / on new http:Listener(MOCK_PORT) {
         } else if operation.startsWith("contact-lists/") {
             // A single contact list: read, replaced, or removed.
             payload = method == "GET" ? {
-                    "ContactListName": "ballerina-ses-test-list",
+                    "ContactListName": MOCK_CONTACT_LIST_NAME,
                     "Description": "A list used by the Ballerina connector tests",
                     "Topics": [
                         {
@@ -168,13 +188,13 @@ isolated service / on new http:Listener(MOCK_PORT) {
                 } : {};
         } else if operation == "templates" && method == "GET" {
             payload = {
-                "TemplatesMetadata": [{"TemplateName": "BallerinaSesTestTemplate", "CreatedTimestamp": 1735689600}]
+                "TemplatesMetadata": [{"TemplateName": MOCK_TEMPLATE_NAME, "CreatedTimestamp": 1735689600}]
             };
         } else if operation == "templates" && method == "POST" {
             payload = {};
         } else if operation.startsWith("templates/") {
             payload = method == "GET" ? {
-                    "TemplateName": "BallerinaSesTestTemplate",
+                    "TemplateName": MOCK_TEMPLATE_NAME,
                     "TemplateContent": {
                         "Subject": "Your order {{orderId}} has shipped",
                         "Html": "<html><body><p>On its way.</p></body></html>",
@@ -185,8 +205,8 @@ isolated service / on new http:Listener(MOCK_PORT) {
             payload = {
                 "CustomVerificationEmailTemplates": [
                     {
-                        "TemplateName": "BallerinaSesTestVerification",
-                        "FromEmailAddress": "sender@example.com",
+                        "TemplateName": MOCK_VERIFICATION_TEMPLATE_NAME,
+                        "FromEmailAddress": MOCK_SENDER_EMAIL,
                         "TemplateSubject": "Please confirm your email address",
                         "SuccessRedirectionURL": "https://example.com/verified",
                         "FailureRedirectionURL": "https://example.com/not-verified"
@@ -197,8 +217,8 @@ isolated service / on new http:Listener(MOCK_PORT) {
             payload = {};
         } else if operation.startsWith("custom-verification-email-templates/") {
             payload = method == "GET" ? {
-                    "TemplateName": "BallerinaSesTestVerification",
-                    "FromEmailAddress": "sender@example.com",
+                    "TemplateName": MOCK_VERIFICATION_TEMPLATE_NAME,
+                    "FromEmailAddress": MOCK_SENDER_EMAIL,
                     "TemplateSubject": "Please confirm your email address",
                     "TemplateContent": "<html><body><p>Confirm your address.</p></body></html>",
                     "SuccessRedirectionURL": "https://example.com/verified",
@@ -208,7 +228,7 @@ isolated service / on new http:Listener(MOCK_PORT) {
             payload = {
                 "EmailIdentities": [
                     {
-                        "IdentityName": "sender@example.com",
+                        "IdentityName": MOCK_SENDER_EMAIL,
                         "IdentityType": "EMAIL_ADDRESS",
                         "SendingEnabled": true,
                         "VerificationStatus": "SUCCESS"

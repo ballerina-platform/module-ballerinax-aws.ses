@@ -21,6 +21,12 @@ import ballerinax/aws.ses;
 configurable string region = ?;
 configurable string senderEmail = ?;
 
+// The exceptions Amazon SES names for the two conditions this example expects and recovers from. Every other
+// failure is propagated: mistaking a permissions error or a throttle for "not there yet" replaces the real cause
+// with whatever the follow-up call then fails with.
+const NOT_FOUND = "NotFoundException";
+const ALREADY_EXISTS = "AlreadyExistsException";
+
 // Runs a newsletter list end to end: create the list with a topic, subscribe a few contacts, send only to the ones
 // opted in, and let the unsubscribe link maintain the list.
 //
@@ -32,6 +38,12 @@ public function main() returns error? {
         region
     });
 
+    error? result = runNewsletter(ses);
+    check ses.close();
+    return result;
+}
+
+function runNewsletter(ses:Client ses) returns error? {
     string listName = "ProductNewsletter";
     string topicName = "product-updates";
 
@@ -53,11 +65,10 @@ public function main() returns error? {
 
     int sent = 0;
     check from ses:Contact subscriber in subscribers
+        let string address = subscriber.emailAddress ?: ""
+        // A contact with no address is skipped. Returning here would abandon the whole run, not just this one.
+        where address != ""
         do {
-            string address = subscriber.emailAddress ?: "";
-            if address == "" {
-                return;
-            }
             ses:SendEmailOutput result = check ses->sendEmail({
                 fromEmailAddress: senderEmail,
                 destination: {toAddresses: [address]},
@@ -80,8 +91,6 @@ public function main() returns error? {
             io:println("Sent to ", address, ": ", result.messageId ?: "<no message id>");
         };
     io:println("Sent the newsletter to ", sent, " subscriber(s).");
-
-    check ses.close();
 }
 
 // Creates the contact list on the first run, and leaves it alone afterwards.
@@ -90,6 +99,9 @@ function createListIfAbsent(ses:Client ses, string listName, string topicName) r
     if existing is ses:ContactListDetails {
         io:println("Using the existing contact list: ", listName);
         return;
+    }
+    if existing.detail()?.errorCode != NOT_FOUND {
+        return existing;
     }
     check ses->createContactList({
         contactListName: listName,
@@ -116,7 +128,11 @@ function upsertContact(ses:Client ses, string listName, string emailAddress, str
         io:println("Subscribed ", emailAddress, " as ", status);
         return;
     }
-    // Already on the list: update the preference instead.
+    // Already on the list: update the preference instead. A rejected address or a missing list is not that, and
+    // is reported rather than retried as an update.
+    if created.detail()?.errorCode != ALREADY_EXISTS {
+        return created;
+    }
     check ses->updateContact(listName, emailAddress, {topicPreferences: preferences});
     io:println("Updated ", emailAddress, " to ", status);
 }

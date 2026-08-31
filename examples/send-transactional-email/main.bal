@@ -25,8 +25,8 @@ configurable string region = ?;
 configurable string senderEmail = ?;
 configurable string recipientEmail = ?;
 
-// Sends an order confirmation two ways: once as a one-off HTML message, and once through a stored template, which
-// is how the same message is sent to many recipients without rebuilding its body each time.
+// Sends an order confirmation three ways: as a one-off HTML message, through a stored template, and as a bulk send
+// that reuses the template for many recipients without rebuilding its body each time.
 public function main() returns error? {
     ses:Client ses = check new ({
         auth: {accessKeyId, secretAccessKey},
