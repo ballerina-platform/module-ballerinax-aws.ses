@@ -1,6 +1,6 @@
-// Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+// Copyright (c) 2021, WSO2 LLC. (http://www.wso2.com).
 //
-// WSO2 Inc. licenses this file to you under the Apache License,
+// WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,83 +14,52 @@
 // specific language governing permissions and limitations
 // under the License.
 
-const string AWS_HOST = "amazonaws.com";
-const string AWS_SERVICE = "email";
-const string DEFAULT_REGION = "us-east-1";
-const string URI = "/v2/email/";
+// The endpoint prefix of the Amazon SES service, used to resolve the endpoint
+// URL (e.g. `email.us-east-1.amazonaws.com`).
+const string SERVICE_NAME = "email";
 
-const string UTF_8 = "UTF-8";
-const string UNSIGNED_PAYLOAD = "UNSIGNED-PAYLOAD";
-const string SERVICE_NAME = "ses";
-const string HOST = "host";
-const string CONTENT_TYPE = "content-type";
-const string APPLICATION_JSON = "application/json";
-const string X_AMZ_DATE = "x-amz-date";
-const string AWS4_REQUEST = "aws4_request";
-const string AWS4_HMAC_SHA256 = "AWS4-HMAC-SHA256";
-const string CREDENTIAL = "Credential";
-const string SIGNED_HEADER = "SignedHeaders";
-const string SIGNATURE = "Signature";
-const string AWS4 = "AWS4";
-const string CONTACT_LISTS = "contact-lists";
-const string CONTACTS = "contacts";
-const string CUSTOM_VERIFICATION_EMAIL_TEMPLATES = "custom-verification-email-templates";
-const string TEMPLATES = "templates";
-const string IDENTITIES = "identities";
-const string ISO8601_BASIC_DATE_FORMAT = "yyyyMMdd'T'HHmmss'Z'";
-const string SHORT_DATE_FORMAT = "yyyyMMdd";
-const string ENCODED_SLASH = "%2F";
-const string SLASH = "/";
-const string EMPTY_STRING = "";
-const string NEW_LINE = "\n";
-const string COLON = ":";
-const string SEMICOLON = ";";
-const string EQUAL = "=";
-const string SPACE = " ";
-const string COMMA = ",";
-const string DOT = ".";
-const string Z = "Z";
+// The SigV4 signing name of the Amazon SES service, which differs from the
+// endpoint prefix above.
+const string SIGNING_SERVICE_NAME = "ses";
 
-// Constants to refer the headers.
-const string HEADER_CONTENT_TYPE = "Content-Type";
-const string HEADER_X_AMZ_CONTENT_SHA256 = "X-Amz-Content-Sha256";
-const string HEADER_X_AMZ_DATE = "X-Amz-Date";
-const string HEADER_HOST = "Host";
-const string HEADER_AUTHORIZATION= "Authorization";
+// Base path of the Amazon SES API v2.
+const string BASE_PATH = "/v2/email";
 
-// HTTP verbs.
-const string GET = "GET";
-const string POST = "POST";
-const string PUT = "PUT";
-const string DELETE = "DELETE";
-const string TRUE = "TRUE";
-const string FALSE = "FALSE";
-const string HTTPS = "https://";
+const string CONTACT_LISTS_PATH = string `${BASE_PATH}/contact-lists`;
+const string TEMPLATES_PATH = string `${BASE_PATH}/templates`;
+const string CUSTOM_VERIFICATION_TEMPLATES_PATH = string `${BASE_PATH}/custom-verification-email-templates`;
+const string IDENTITIES_PATH = string `${BASE_PATH}/identities`;
+const string OUTBOUND_EMAILS_PATH = string `${BASE_PATH}/outbound-emails`;
+const string OUTBOUND_CUSTOM_VERIFICATION_EMAILS_PATH = string `${BASE_PATH}/outbound-custom-verification-emails`;
+const string OUTBOUND_BULK_EMAILS_PATH = string `${BASE_PATH}/outbound-bulk-emails`;
 
-# Error messages.
-const string EMPTY_VALUES_FOR_CREDENTIALS_ERROR_MSG = "Empty values set for accessKeyId or secretAccessKey credential";
-const string DATE_STRING_GENERATION_ERROR_MSG = "Error occured while generating date strings.";
-const string CANONICAL_URI_GENERATION_ERROR_MSG = "Error occured while generating canonical URI.";
-const string CANONICAL_QUERY_STRING_GENERATION_ERROR_MSG = "Error occured while generating canonical query string.";
+const string CONTACTS_SEGMENT = "contacts";
+const string LIST_SEGMENT = "list";
 
-const string GENERATE_SIGNED_REQUEST_HEADERS_FAILED_MSG = "Error occurred while generating signed request headers.";
+const string HTTP_GET = "GET";
+const string HTTP_POST = "POST";
+const string HTTP_PUT = "PUT";
+const string HTTP_DELETE = "DELETE";
 
-public enum SubscriptionStatus {
-    OPT_IN , OPT_OUT
-}
+// Amazon SES API v2 is a JSON REST API.
+const string JSON_CONTENT_TYPE = "application/json";
 
-public enum IdentityType {
-    EMAIL_ADDRESS, DOMAIN, MANAGED_DOMAIN
-}
+const string CONTENT_TYPE_HEADER = "content-type";
+const string REQUEST_ID_HEADER = "x-amzn-RequestId";
 
-public enum SigningAttributesOrigin {
-    AWS_SES, EXTERNAL
-}
+// Amazon SES speaks the `restJson1` protocol, which reports the error's shape name in this header, falling back to
+// a `__type` or a `code` field in the body, and its description in a `message` or a `Message` field.
+const string ERROR_TYPE_HEADER = "x-amzn-errortype";
+const string TYPE_FIELD = "__type";
+const string CODE_FIELD = "code";
+const string MESSAGE_FIELD = "message";
+const string MESSAGE_FIELD_LEGACY = "Message";
 
-public enum DkimAttributesStatus {
-    PENDING, SUCCESS, FAILED, TEMPORARY_FAILURE, NOT_STARTED
-}
+// Pagination parameters, which every SES list operation accepts as query
+// parameters, except `ListContacts`, which takes them in the request body.
+const string NEXT_TOKEN_PARAM = "NextToken";
+const string PAGE_SIZE_PARAM = "PageSize";
 
-public enum BehaviorOnMxFailure {
-    USE_DEFAULT_VALUE, REJECT_MESSAGE
-}
+// The characters RFC 3986 calls unreserved. Everything else in a path segment
+// or a query parameter is percent-encoded before it goes on the wire.
+const string UNRESERVED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_.~";
