@@ -100,7 +100,7 @@ public isolated client class Client {
             method: HTTP_GET,
             path: string `${CONTACT_LISTS_PATH}/${contactListName}`
         });
-        ContactListDetails|jsondata:Error result = jsondata:parseAsType(response);
+        ContactListDetails|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the GetContactList response: ${result.message()}`, result);
@@ -125,7 +125,7 @@ public isolated client class Client {
                 path: CONTACT_LISTS_PATH,
                 queryParams: paginationParams(nextToken, pageSize)
             });
-            ListContactListsOutput|jsondata:Error page = jsondata:parseAsType(response);
+            ListContactListsOutput|jsondata:Error page = jsondata:parseAsType(response, PARSE_OPTIONS);
             if page is jsondata:Error {
                 return error ResponseHandlingError(
                         string `Error occurred while processing the ListContactLists response: ${page.message()}`,
@@ -205,7 +205,7 @@ public isolated client class Client {
             method: HTTP_GET,
             path: string `${CONTACT_LISTS_PATH}/${contactListName}/${CONTACTS_SEGMENT}/${emailAddress}`
         });
-        ContactDetails|jsondata:Error result = jsondata:parseAsType(response);
+        ContactDetails|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the GetContact response: ${result.message()}`, result);
@@ -241,7 +241,7 @@ public isolated client class Client {
                 path: string `${CONTACT_LISTS_PATH}/${contactListName}/${CONTACTS_SEGMENT}/${LIST_SEGMENT}`,
                 payload: payload
             });
-            ListContactsOutput|jsondata:Error page = jsondata:parseAsType(response);
+            ListContactsOutput|jsondata:Error page = jsondata:parseAsType(response, PARSE_OPTIONS);
             if page is jsondata:Error {
                 return error ResponseHandlingError(
                         string `Error occurred while processing the ListContacts response: ${page.message()}`, page);
@@ -333,7 +333,7 @@ public isolated client class Client {
             method: HTTP_GET,
             path: string `${CUSTOM_VERIFICATION_TEMPLATES_PATH}/${templateName}`
         });
-        CustomVerificationEmailTemplateDetails|jsondata:Error result = jsondata:parseAsType(response);
+        CustomVerificationEmailTemplateDetails|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the GetCustomVerificationEmailTemplate response: ${
@@ -364,7 +364,7 @@ public isolated client class Client {
                     path: CUSTOM_VERIFICATION_TEMPLATES_PATH,
                     queryParams: paginationParams(nextToken, pageSize)
                 });
-                ListCustomVerificationEmailTemplatesOutput|jsondata:Error page = jsondata:parseAsType(response);
+                ListCustomVerificationEmailTemplatesOutput|jsondata:Error page = jsondata:parseAsType(response, PARSE_OPTIONS);
                 if page is jsondata:Error {
                     return error ResponseHandlingError(
                             string `Error occurred while processing the ListCustomVerificationEmailTemplates response: ${
@@ -448,7 +448,7 @@ public isolated client class Client {
             method: HTTP_GET,
             path: string `${TEMPLATES_PATH}/${templateName}`
         });
-        EmailTemplateDetails|jsondata:Error result = jsondata:parseAsType(response);
+        EmailTemplateDetails|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the GetEmailTemplate response: ${result.message()}`,
@@ -475,7 +475,7 @@ public isolated client class Client {
                 path: TEMPLATES_PATH,
                 queryParams: paginationParams(nextToken, pageSize)
             });
-            ListEmailTemplatesOutput|jsondata:Error page = jsondata:parseAsType(response);
+            ListEmailTemplatesOutput|jsondata:Error page = jsondata:parseAsType(response, PARSE_OPTIONS);
             if page is jsondata:Error {
                 return error ResponseHandlingError(
                         string `Error occurred while processing the ListEmailTemplates response: ${page.message()}`,
@@ -521,7 +521,7 @@ public isolated client class Client {
             path: IDENTITIES_PATH,
             payload: jsondata:toJson(request)
         });
-        CreateEmailIdentityOutput|jsondata:Error result = jsondata:parseAsType(response);
+        CreateEmailIdentityOutput|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the CreateEmailIdentity response: ${result.message()}`,
@@ -545,7 +545,7 @@ public isolated client class Client {
             method: HTTP_GET,
             path: string `${IDENTITIES_PATH}/${emailIdentity}`
         });
-        EmailIdentityDetails|jsondata:Error result = jsondata:parseAsType(response);
+        EmailIdentityDetails|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the GetEmailIdentity response: ${result.message()}`,
@@ -572,7 +572,7 @@ public isolated client class Client {
                 path: IDENTITIES_PATH,
                 queryParams: paginationParams(nextToken, pageSize)
             });
-            ListEmailIdentitiesOutput|jsondata:Error page = jsondata:parseAsType(response);
+            ListEmailIdentitiesOutput|jsondata:Error page = jsondata:parseAsType(response, PARSE_OPTIONS);
             if page is jsondata:Error {
                 return error ResponseHandlingError(
                         string `Error occurred while processing the ListEmailIdentities response: ${page.message()}`,
@@ -624,7 +624,7 @@ public isolated client class Client {
             path: OUTBOUND_EMAILS_PATH,
             payload: jsondata:toJson(request)
         });
-        SendEmailOutput|jsondata:Error result = jsondata:parseAsType(response);
+        SendEmailOutput|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the SendEmail response: ${result.message()}`, result);
@@ -651,7 +651,7 @@ public isolated client class Client {
             path: OUTBOUND_CUSTOM_VERIFICATION_EMAILS_PATH,
             payload: jsondata:toJson(request)
         });
-        SendEmailOutput|jsondata:Error result = jsondata:parseAsType(response);
+        SendEmailOutput|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the SendCustomVerificationEmail response: ${
@@ -679,7 +679,7 @@ public isolated client class Client {
             path: OUTBOUND_BULK_EMAILS_PATH,
             payload: jsondata:toJson(request)
         });
-        SendBulkEmailOutput|jsondata:Error result = jsondata:parseAsType(response);
+        SendBulkEmailOutput|jsondata:Error result = jsondata:parseAsType(response, PARSE_OPTIONS);
         if result is jsondata:Error {
             return error ResponseHandlingError(
                     string `Error occurred while processing the SendBulkEmail response: ${result.message()}`, result);

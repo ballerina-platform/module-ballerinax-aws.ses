@@ -14,6 +14,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import ballerina/data.jsondata;
+
 // The endpoint prefix of the Amazon SES service, used to resolve the endpoint
 // URL (e.g. `email.us-east-1.amazonaws.com`).
 const string SERVICE_NAME = "email";
@@ -59,6 +61,10 @@ const string MESSAGE_FIELD_LEGACY = "Message";
 // parameters, except `ListContacts`, which takes them in the request body.
 const string NEXT_TOKEN_PARAM = "NextToken";
 const string PAGE_SIZE_PARAM = "PageSize";
+
+// Projecting nil onto an absent optional field keeps the response records free of nilable types,
+// which would otherwise have to spread to every optional field.
+final jsondata:Options & readonly PARSE_OPTIONS = {allowDataProjection: {nilAsOptionalField: true}};
 
 // The characters RFC 3986 calls unreserved. Everything else in a path segment
 // or a query parameter is percent-encoded before it goes on the wire.

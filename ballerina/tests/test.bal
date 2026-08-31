@@ -138,10 +138,6 @@ isolated function testIdentityResponseBinding() returns error? {
     test:assertEquals(policies["policy-one"], "{\"Version\":\"2012-10-17\"}");
 }
 
-// ---------------------------------------------------------------------------
-// Percent-encoding — the half of the signature that is computed on this side
-// ---------------------------------------------------------------------------
-
 @test:Config {groups: ["dataBinding"]}
 isolated function testEncodeValueLeavesUnreservedCharacters() {
     test:assertEquals(encodeValue("BallerinaSesTestTemplate"), "BallerinaSesTestTemplate");
@@ -168,6 +164,25 @@ isolated function testEncodeQuery() {
     test:assertEquals(encodeQuery({}), "");
     test:assertEquals(encodeQuery({"PageSize": "10"}), "?PageSize=10");
     test:assertEquals(encodeQuery({"NextToken": "a+b/c"}), "?NextToken=a%2Bb%2Fc");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testExplicitNullIsTreatedAsAbsent() returns error? {
+    // Amazon SES sends `"NextToken": null` on the last page rather than omitting the field. Without nil projection
+    // this fails with `incompatible value 'null' for type 'string'`, which is what a live run hit.
+    json lastPage = {
+        "EmailIdentities": [{"IdentityName": "sender@example.com", "IdentityType": "EMAIL_ADDRESS"}],
+        "NextToken": null
+    };
+    ListEmailIdentitiesOutput page = check jsondata:parseAsType(lastPage, PARSE_OPTIONS);
+    test:assertEquals(page.emailIdentities.length(), 1);
+    test:assertTrue(page?.nextToken is (), "an explicit null must read as an absent continuation token");
+
+    // A null on a nested response field must be tolerated the same way.
+    json identity = {"IdentityType": "EMAIL_ADDRESS", "ConfigurationSetName": null, "VerifiedForSendingStatus": true};
+    EmailIdentityDetails details = check jsondata:parseAsType(identity, PARSE_OPTIONS);
+    test:assertEquals(details.identityType, EMAIL_ADDRESS);
+    test:assertTrue(details?.configurationSetName is ());
 }
 
 @test:Config {groups: ["dataBinding"]}
