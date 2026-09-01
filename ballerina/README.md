@@ -1,13 +1,20 @@
-# Ballerina Amazon SES Connector
-
-[![Build](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions/workflows/ci.yml/badge.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/ballerina-platform/module-ballerinax-aws.ses/branch/master/graph/badge.svg)](https://codecov.io/gh/ballerina-platform/module-ballerinax-aws.ses)
-[![GitHub Last Commit](https://img.shields.io/github/last-commit/ballerina-platform/module-ballerinax-aws.ses.svg)](https://github.com/ballerina-platform/module-ballerinax-aws.ses/commits/master)
-[![GitHub Issues](https://img.shields.io/github/issues/ballerina-platform/ballerina-library/module/aws.ses.svg?label=Open%20Issues)](https://github.com/ballerina-platform/ballerina-library/labels/module%2Faws.ses)
-
 ## Overview
 
-The `ballerinax/aws.ses` package offers APIs to connect and interact with the [Amazon SES API v2](https://docs.aws.amazon.com/ses/latest/APIReference-V2/Welcome.html) endpoints, covering email sending, email identities, contact lists and contacts, email templates, and custom verification email templates.
+[Amazon Simple Email Service (Amazon SES)](https://aws.amazon.com/ses/) is a cost-effective, flexible, and scalable email service that lets applications send mail from within any application — transactional messages, marketing campaigns, and bulk communications alike. Its flexible IP deployment and email authentication options help drive deliverability and protect sender reputation, while sending analytics measure the impact of each message.
+
+The Amazon SES connector offers APIs to connect and interact with the [Amazon SES API v2](https://docs.aws.amazon.com/ses/latest/APIReference-V2/Welcome.html) endpoints.
+
+### Key features
+
+- Send email three ways: a simple message assembled by Amazon SES, a raw MIME message carrying its own headers and attachments, or a templated message whose placeholders Amazon SES fills in
+- Bulk sending, with one templated message per recipient and a per-recipient result
+- Manage email identities, including DKIM setup (Easy DKIM and BYODKIM), custom MAIL FROM domains, and sending authorization policies
+- Manage contact lists, contacts, and topics, with subscription filtering and unsubscribe-link support through list management options
+- Manage email templates and custom verification email templates
+- Auto-paginating streams over every list operation, so results beyond the first page are reachable
+- Flexible credential configuration: static keys, AWS credentials file profiles, STS assume-role, web identity (OIDC), IAM Identity Center (SSO), an external credential process, or the default AWS credential provider chain (EKS Pod Identity, ECS task roles, EC2 instance profiles, environment variables)
+- Automatic refresh of expiring temporary credentials
+- FIPS, dualstack, and custom endpoint support
 
 ## Setup guide
 
@@ -184,75 +191,3 @@ The `aws.ses` connector provides practical examples illustrating usage in variou
 
 2. [Manage a contact list](https://github.com/ballerina-platform/module-ballerinax-aws.ses/tree/master/examples/manage-contact-list)
    This example shows how to run a newsletter list end to end: create the list and its topic, subscribe contacts, send only to the ones opted in, and let the unsubscribe link maintain the list. It runs on the default credential provider chain, so it works unchanged on EC2, ECS, and EKS.
-## Build from the source
-
-### Prerequisites
-
-1. Download and install Java SE Development Kit (JDK) version 21. You can download it from either of the following sources:
-
-    * [Oracle JDK](https://www.oracle.com/java/technologies/downloads/)
-    * [OpenJDK](https://adoptium.net/)
-
-   > **Note:** After installation, remember to set the `JAVA_HOME` environment variable to the directory where JDK was installed.
-
-2. Download and install [Ballerina Swan Lake](https://ballerina.io/).
-
-3. Download and install [Docker](https://www.docker.com/get-started).
-
-   > **Note**: Ensure that the Docker daemon is running before executing any tests.
-
-### Build options
-
-Execute the commands below to build from the source.
-
-1. To build the package:
-   ```bash
-   ./gradlew clean build
-   ```
-
-2. To run the tests:
-   ```bash
-   ./gradlew clean test
-   ```
-
-3. To build the without the tests:
-   ```bash
-   ./gradlew clean build -x test
-   ```
-
-4. To debug package with a remote debugger:
-   ```bash
-   ./gradlew clean build -Pdebug=<port>
-   ```
-
-5. To debug with the Ballerina language:
-   ```bash
-   ./gradlew clean build -PbalJavaDebug=<port>
-   ```
-
-6. Publish the generated artifacts to the local Ballerina Central repository:
-    ```bash
-    ./gradlew clean build -PpublishToLocalCentral=true
-    ```
-
-7. Publish the generated artifacts to the Ballerina Central repository:
-   ```bash
-   ./gradlew clean build -PpublishToCentral=true
-   ```
-
-## Contribute to Ballerina
-
-As an open-source project, Ballerina welcomes contributions from the community.
-
-For more information, go to the [contribution guidelines](https://github.com/ballerina-platform/ballerina-lang/blob/master/CONTRIBUTING.md).
-
-## Code of conduct
-
-All the contributors are encouraged to read the [Ballerina Code of Conduct](https://ballerina.io/code-of-conduct).
-
-## Useful links
-
-* For more information go to the [`aws.ses` package](https://central.ballerina.io/ballerinax/aws.ses/latest).
-* For example demonstrations of the usage, go to [Ballerina By Examples](https://ballerina.io/learn/by-example/).
-* Chat live with us via our [Discord server](https://discord.gg/ballerinalang).
-* Post all technical questions on Stack Overflow with the [#ballerina](https://stackoverflow.com/questions/tagged/ballerina) tag.

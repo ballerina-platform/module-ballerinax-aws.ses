@@ -1,0 +1,4 @@
+[package]
+org = "wso2"
+name = "manage_contact_list"
+version = "0.1.0"

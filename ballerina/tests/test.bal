@@ -1,6 +1,6 @@
-// Copyright (c) 2021, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+// Copyright (c) 2026, WSO2 LLC. (http://www.wso2.com).
 //
-// WSO2 Inc. licenses this file to you under the Apache License,
+// WSO2 LLC. licenses this file to you under the Apache License,
 // Version 2.0 (the "License"); you may not use this file except
 // in compliance with the License.
 // You may obtain a copy of the License at
@@ -14,348 +14,486 @@
 // specific language governing permissions and limitations
 // under the License.
 
-import ballerina/log;
-import ballerina/os;
+import ballerina/data.jsondata;
 import ballerina/test;
+import ballerinax/aws;
+import ballerinax/aws.auth;
 
-configurable string accessKeyId = os:getEnv("ACCESS_KEY_ID");
-configurable string secretAccessKey = os:getEnv("SECRET_ACCESS_KEY");
-configurable string senderEmail = os:getEnv("SENDER_EMAIL");
-configurable string receiverEmail = os:getEnv("RECEIVER_EMAIL");
-configurable string emailIdentity = os:getEnv("EMAIL_IDENTITY");
-
-ConnectionConfig amazonSesConfig = {
-    awsCredentials: {
-        accessKeyId: accessKeyId,
-        secretAccessKey: secretAccessKey
-    }
-};
-
-final string contactListName = "TestContactList";
-final string contactName = "test.contact@gmail.com";
-final string customVerificationTemplateName = "CustomVerificationTest";
-final string emailTemplateName = "EmailTemplateTest";
-
-
-Client amazonSesClient = check new(amazonSesConfig);
-
-@test:Config {}
-function testCreateContactList() returns error? {
-    log:printInfo("Testing CreateContactList");
-    ContactListCreationRequest request = {
-        ContactListName: contactListName,
-        Tags: [
+@test:Config {groups: ["dataBinding"]}
+isolated function testRequestUsesWireFieldNames() {
+    CreateContactListInput request = {
+        contactListName: "Newsletter",
+        description: "Weekly product news",
+        topics: [
             {
-                Key: "Test Tag",
-                Value: "Test Value"
+                topicName: "updates",
+                displayName: "Product updates",
+                defaultSubscriptionStatus: OPT_IN
             }
         ]
     };
-    check amazonSesClient-> createContactList(request);
-}
-
-@test:Config {
-    dependsOn: [testCreateContactList]
-}
-function testUpdateContactList() returns error? {
-    log:printInfo("Testing UpdateContactList");
-    ContactList request = {
-        Description: "Updated Description",
-        Topics: [
+    json payload = jsondata:toJson(request);
+    // The Ballerina fields are camelCase, but the wire names Amazon SES expects are PascalCase.
+    test:assertEquals(payload, {
+        "ContactListName": "Newsletter",
+        "Description": "Weekly product news",
+        "Topics": [
             {
-               DefaultSubscriptionStatus : "OPT_OUT",
-               TopicName: "Test_Topic" ,
-               DisplayName : "Test Topic"
+                "TopicName": "updates",
+                "DisplayName": "Product updates",
+                "DefaultSubscriptionStatus": "OPT_IN"
             }
         ]
-    };
-    check amazonSesClient-> updateContactList(contactListName, request);
+    });
 }
 
-@test:Config {
-    dependsOn: [testUpdateContactList]
-}
-function testGetContactList() returns error? {
-    log:printInfo("Testing GetContactList");
-    ContactList response =  check amazonSesClient-> getContactList(contactListName);
-    test:assertEquals(response?.ContactListName, contactListName, "Expected contact-list is not obtained");
-}
-
-@test:Config {
-    dependsOn: [testGetContactList]
-}
-function testListContactLists() returns error? {
-    log:printInfo("Testing ListContactLists");
-    _ =  check amazonSesClient->listContactLists();
-}
-
-@test:Config {
-    dependsOn: [testUpdateContactList]
-}
-function testCreateContact() returns error? {
-    log:printInfo("Testing CreateContact");
-    ContactCreationRequest request = {
-        EmailAddress: contactName,
-        TopicPreferences: [
-            {
-                SubscriptionStatus: "OPT_OUT",
-                TopicName: "Test_Topic"
+@test:Config {groups: ["dataBinding"]}
+isolated function testSendEmailRequestBinding() {
+    SendEmailInput request = {
+        fromEmailAddress: "sender@example.com",
+        destination: {toAddresses: ["recipient@example.com"], ccAddresses: ["cc@example.com"]},
+        replyToAddresses: ["reply@example.com"],
+        configurationSetName: "default-set",
+        content: {
+            simple: {
+                subject: {data: "Your order has shipped", charset: "UTF-8"},
+                body: {
+                    html: {data: "<html><body><p>On its way.</p></body></html>"},
+                    text: {data: "On its way."}
+                }
             }
-        ]
-    };
-    check amazonSesClient-> createContact(contactListName, request);
-}
-
-@test:Config {
-    dependsOn: [testCreateContact]
-}
-function testUpdateContact() returns error? {
-    log:printInfo("Testing CreateContact");
-    ContactUpdateRequest request = {
-        TopicPreferences: [
-            {
-                SubscriptionStatus: "OPT_IN",
-                TopicName: "Test_Topic"
-            }
-        ]
-    };
-    check amazonSesClient-> updateContact(contactListName, contactName, request);
-}
-
-@test:Config {
-    dependsOn: [testUpdateContact]
-}
-function testGetContact() returns error? {
-    log:printInfo("Testing GetContact");
-    Contact response =  check amazonSesClient-> getContact(contactListName, contactName);
-    test:assertEquals(response?.EmailAddress, contactName, "Expected contact is not obtained");
-}
-
-@test:Config {
-    dependsOn: [testGetContact]
-}
-function testListContacts() returns error? {
-    log:printInfo("Testing ListContacts");
-    _ = check amazonSesClient-> listContacts(contactListName);
-}
-
-@test:Config {
-    dependsOn: [testListContacts]
-}
-function testDeleteContact() returns error? {
-    log:printInfo("Testing DeleteContact");
-    check amazonSesClient-> deleteContact(contactListName, contactName);
-}
-
-@test:Config {}
-function testCreateCustomVeriﬁcationEmailTemplate() returns error? {
-    log:printInfo("Testing CreateCustomVeriﬁcationEmailTemplate");
-    CustomVeriﬁcationEmailTemplate request = {
-        FailureRedirectionURL: "https://www.example.com/verifyfailure",
-        FromEmailAddress: senderEmail,
-        SuccessRedirectionURL: "https://www.example.com/verifysuccess",
-        TemplateContent: "Custom verification template Testing",
-        TemplateName: customVerificationTemplateName,
-        TemplateSubject: "Custom Verification Test"
-    };
-    check amazonSesClient->createCustomVeriﬁcationEmailTemplate(request);
-}
-
-@test:Config {
-    dependsOn: [testCreateCustomVeriﬁcationEmailTemplate]
-}
-function testGetCustomVeriﬁcationEmailTemplate() returns error? {
-    log:printInfo("Testing GetCustomVeriﬁcationEmailTemplate");
-    CustomVeriﬁcationEmailTemplate response =  check amazonSesClient->getCustomVeriﬁcationEmailTemplate(customVerificationTemplateName);
-    test:assertEquals(response.TemplateName, customVerificationTemplateName, "Expected template is not obtained");
-}
-
-@test:Config {
-    dependsOn: [testGetCustomVeriﬁcationEmailTemplate]
-}
-
-function testUpdateCustomVeriﬁcationEmailTemplate() returns error? {
-    log:printInfo("Testing UpdateCustomVeriﬁcationEmailTemplate");
-    CustomVeriﬁcationEmailUpdate request = {
-        FailureRedirectionURL: "https://www.example.com/verifyfailure",
-        FromEmailAddress: senderEmail,
-        SuccessRedirectionURL: "https://www.example.com/verifysuccess",
-        TemplateContent: "This to just test Update.",
-        TemplateSubject: "Custom Verification Test Update"
-    };
-    check amazonSesClient->updateCustomVeriﬁcationEmailTemplate(customVerificationTemplateName, request);
-}
-
-@test:Config {
-    dependsOn: [testUpdateCustomVeriﬁcationEmailTemplate]
-}
-
-function testListCustomVeriﬁcationEmailTemplates() returns error? {
-    log:printInfo("Testing ListCustomVeriﬁcationEmailTemplates");
-    _ = check amazonSesClient->listCustomVeriﬁcationEmailTemplates();
-}
-
-@test:Config {
-    dependsOn: [testListCustomVeriﬁcationEmailTemplates]
-}
-function testDeleteCustomVeriﬁcationEmailTemplate() returns error? {
-    log:printInfo("Testing DeleteCustomVeriﬁcationEmailTemplate");
-    check amazonSesClient->deleteCustomVeriﬁcationEmailTemplate(customVerificationTemplateName);
-}
-
-@test:Config {}
-function testCreateEmailTemplate() returns error? {
-    log:printInfo("Testing CreateEmailTemplate");
-    EmailTemplate request = {
-        TemplateContent: {
-            Subject: "TemplateEmail",
-            Text: "This is a sample email sent from AWS SES using a template"
-        },
-        TemplateName: emailTemplateName
-    };
-    check amazonSesClient->createEmailTemplate(request);
-}
-
-@test:Config {
-    dependsOn: [testCreateEmailTemplate]
-}
-function testGetEmailTemplate() returns error? {
-    log:printInfo("Testing GetEmailTemplate");
-    EmailTemplate response = check amazonSesClient->getEmailTemplate(emailTemplateName);
-    test:assertEquals(response.TemplateName, emailTemplateName, "Expected template is not obtained.");
-}
-
-@test:Config {
-    dependsOn: [testGetEmailTemplate]
-}
-
-function testUpdateEmailTemplate() returns error? {
-    log:printInfo("Testing UpdateEmailTemplate");
-    EmailTemplateUpdateRequest request = {
-        TemplateContent: {
-            Subject: "UpdatedTemplateEmail",
-            Text: "This is an updated sample email template"
         }
     };
-    check amazonSesClient->updateEmailTemplate(emailTemplateName, request);
+    map<json> payload = <map<json>>jsondata:toJson(request);
+    test:assertEquals(payload["FromEmailAddress"], "sender@example.com");
+    test:assertEquals(payload["ReplyToAddresses"], ["reply@example.com"]);
+    test:assertEquals(payload["ConfigurationSetName"], "default-set");
+    map<json> destination = <map<json>>payload["Destination"];
+    test:assertEquals(destination["ToAddresses"], ["recipient@example.com"]);
+    test:assertEquals(destination["CcAddresses"], ["cc@example.com"]);
+    // An HTML body is reachable at last — 2.x could only send plain text.
+    map<json> content = <map<json>>payload["Content"];
+    map<json> simple = <map<json>>content["Simple"];
+    map<json> body = <map<json>>simple["Body"];
+    map<json> html = <map<json>>body["Html"];
+    test:assertEquals(html["Data"], "<html><body><p>On its way.</p></body></html>");
 }
 
-@test:Config {
-    dependsOn: [testUpdateEmailTemplate]
-}
-
-function testListEmailTemplates() returns error? {
-    log:printInfo("Testing ListEmailTemplates");
-    _ = check amazonSesClient->listEmailTemplates();
-}
-
-@test:Config {}
-function testCreateEmailIdentity() returns error? {
-    log:printInfo("Testing CreateEmailIdentity");
-    EmailIdentityCreationRequest request = {
-        EmailIdentity: emailIdentity
-    };
-    EmailIdentity response = check amazonSesClient->createEmailIdentity(request);
-    log:printInfo(response?.IdentityType.toString());
-}
-
-@test:Config {
-  dependsOn: [testCreateEmailIdentity]
-}
-function testGetEmailIdentity() returns error? {
-    log:printInfo("Testing GetEmailIdentity");
-    _ = check amazonSesClient->getEmailIdentity(emailIdentity);
-}
-
-@test:Config {
-  dependsOn: [testGetEmailIdentity]
-}
-function testListEmailIdentities() returns error? {
-    log:printInfo("Testing ListEmailIdentities");
-    _ = check amazonSesClient->listEmailIdentities();
-}
-
-@test:Config {
-  dependsOn: [testListEmailIdentities]
-}
-function testDeleteEmailIdentity() returns error? {
-    log:printInfo("Testing DeleteEmailIdentity");
-    check amazonSesClient->deleteEmailIdentity(emailIdentity);
-}
-
-@test:Config {}
-function testSendEmail() returns error? {
-    log:printInfo("Testing Send Email");
-    EmailRequest req ={
-        Content: {
-            Simple: {
-                Body: {
-                    Text: {
-                        Charset: "UTF-8",
-                        Data: "This is a testing email."
-                    }
-                },
-                Subject: {
-                    Charset: "UTF-8",
-                    Data: "Testing Email Subject"
-                }
-            }
-        },
-        Destination: {
-            ToAddresses: [receiverEmail]
-        },
-        FromEmailAddress: senderEmail
-    };
-    MessageSentResponse response =  check amazonSesClient->sendEmail(req);
-    log:printInfo(response?.MessageId.toString());
-}
-
-@test:Config {
-    dependsOn: [testCreateEmailTemplate]
-}
-function testSendCustomVeriﬁcationEmail() {
-    log:printInfo("Testing Send CustomVeriﬁcationEmail");
-    CustomVeriﬁcationEmailRequest req ={
-        EmailAddress: receiverEmail,
-        TemplateName: emailTemplateName
-    };
-    MessageSentResponse|error response =  amazonSesClient->sendCustomVeriﬁcationEmail(req);
-    if response is MessageSentResponse {
-        log:printInfo(response?.MessageId.toString());
-    }
-}
-
-@test:Config {}
-function testSendBulkEmail() {
-    log:printInfo("Testing Send BulkEmail");
-    BulkEmailRequest req ={
-        BulkEmailEntries: [
+@test:Config {groups: ["dataBinding"]}
+isolated function testResponseBinding() returns error? {
+    json response = {
+        "ContactListName": "Newsletter",
+        "Description": "Weekly product news",
+        "Topics": [
             {
-                Destination: {
-                    ToAddresses: [emailIdentity, receiverEmail]
-                }
+                "TopicName": "updates",
+                "DisplayName": "Product updates",
+                "DefaultSubscriptionStatus": "OPT_OUT",
+                "Description": "Product release notes"
             }
         ],
-        DefaultContent: {
-            Template: {
-                TemplateName: emailTemplateName
+        "CreatedTimestamp": 1735689600,
+        "LastUpdatedTimestamp": 1735776000
+    };
+    ContactListDetails details = check jsondata:parseAsType(response);
+    test:assertEquals(details.contactListName, "Newsletter");
+    test:assertEquals(details.createdTimestamp, <decimal>1735689600);
+    Topic[] topics = check details.topics.ensureType();
+    test:assertEquals(topics[0].topicName, "updates");
+    test:assertEquals(topics[0].defaultSubscriptionStatus, OPT_OUT);
+    test:assertEquals(topics[0].description, "Product release notes");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testIdentityResponseBinding() returns error? {
+    json response = {
+        "IdentityType": "DOMAIN",
+        "VerificationStatus": "SUCCESS",
+        "VerifiedForSendingStatus": true,
+        "FeedbackForwardingStatus": true,
+        "DkimAttributes": {
+            "SigningEnabled": true,
+            "Status": "SUCCESS",
+            "SigningAttributesOrigin": "AWS_SES",
+            "CurrentSigningKeyLength": "RSA_2048_BIT",
+            "Tokens": ["token-one", "token-two"]
+        },
+        "MailFromAttributes": {
+            "MailFromDomain": "mail.example.com",
+            "MailFromDomainStatus": "SUCCESS",
+            "BehaviorOnMxFailure": "USE_DEFAULT_VALUE"
+        },
+        "Policies": {"policy-one": "{\"Version\":\"2012-10-17\"}"}
+    };
+    EmailIdentityDetails identity = check jsondata:parseAsType(response);
+    test:assertEquals(identity.identityType, DOMAIN);
+    test:assertEquals(identity.verificationStatus, SUCCESS);
+    DkimAttributes dkim = check identity.dkimAttributes.ensureType();
+    test:assertEquals(dkim.status, SUCCESS);
+    test:assertEquals(dkim.currentSigningKeyLength, RSA_2048_BIT);
+    test:assertEquals(dkim.tokens, ["token-one", "token-two"]);
+    MailFromAttributes mailFrom = check identity.mailFromAttributes.ensureType();
+    test:assertEquals(mailFrom.behaviorOnMxFailure, USE_DEFAULT_VALUE);
+    map<string> policies = check identity.policies.ensureType();
+    test:assertEquals(policies["policy-one"], "{\"Version\":\"2012-10-17\"}");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testEncodeValueLeavesUnreservedCharacters() {
+    test:assertEquals(encodeValue("BallerinaSesTestTemplate"), "BallerinaSesTestTemplate");
+    test:assertEquals(encodeValue("a-b_c.d~e"), "a-b_c.d~e");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testEncodeValueEncodesReservedCharacters() {
+    // `+` in an email address is the case that matters: left as-is, the service would read it as a space.
+    test:assertEquals(encodeValue("reader+tag@example.com"), "reader%2Btag%40example.com");
+    test:assertEquals(encodeValue("a b"), "a%20b");
+    test:assertEquals(encodeValue("a/b"), "a%2Fb");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testEncodePathPreservesSeparators() {
+    test:assertEquals(encodePath("/v2/email/contact-lists/my list"), "/v2/email/contact-lists/my%20list");
+    test:assertEquals(encodePath("/v2/email/identities/reader+tag@example.com"),
+            "/v2/email/identities/reader%2Btag%40example.com");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testEncodeQuery() {
+    test:assertEquals(encodeQuery({}), "");
+    test:assertEquals(encodeQuery({"PageSize": "10"}), "?PageSize=10");
+    test:assertEquals(encodeQuery({"NextToken": "a+b/c"}), "?NextToken=a%2Bb%2Fc");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testExplicitNullIsTreatedAsAbsent() returns error? {
+    // Amazon SES sends `"NextToken": null` on the last page rather than omitting the field. Without nil projection
+    // this fails with `incompatible value 'null' for type 'string'`, which is what a live run hit.
+    json lastPage = {
+        "EmailIdentities": [{"IdentityName": "sender@example.com", "IdentityType": "EMAIL_ADDRESS"}],
+        "NextToken": null
+    };
+    ListEmailIdentitiesOutput page = check jsondata:parseAsType(lastPage, PARSE_OPTIONS);
+    test:assertEquals(page.emailIdentities.length(), 1);
+    test:assertTrue(page?.nextToken is (), "an explicit null must read as an absent continuation token");
+
+    // A null on a nested response field must be tolerated the same way.
+    json identity = {"IdentityType": "EMAIL_ADDRESS", "ConfigurationSetName": null, "VerifiedForSendingStatus": true};
+    EmailIdentityDetails details = check jsondata:parseAsType(identity, PARSE_OPTIONS);
+    test:assertEquals(details.identityType, EMAIL_ADDRESS);
+    test:assertTrue(details?.configurationSetName is ());
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testShapeNameStripsProtocolDecorations() {
+    // `restJson1` permits the reported error type to be decorated; only the shape name is of use to a caller.
+    test:assertEquals(shapeName("NotFoundException"), "NotFoundException");
+    test:assertEquals(shapeName("aws.sesv2#NotFoundException"), "NotFoundException");
+    test:assertEquals(shapeName("aws.sesv2#NotFoundException:https://internal/"), "NotFoundException");
+    test:assertEquals(shapeName("NotFoundException:https://internal/"), "NotFoundException");
+}
+
+@test:Config {groups: ["dataBinding"]}
+isolated function testPaginationParamsOmitUnsetValues() {
+    test:assertEquals(paginationParams((), ()), {});
+    test:assertEquals(paginationParams("token", ()), {"NextToken": "token"});
+    test:assertEquals(paginationParams((), 25), {"PageSize": "25"});
+    test:assertEquals(paginationParams("token", 25), {"NextToken": "token", "PageSize": "25"});
+}
+
+// ---------------------------------------------------------------------------
+// Operations — run against the mock by default, against the live API when configured
+// ---------------------------------------------------------------------------
+
+@test:Config {groups: ["operations"]}
+function testGetContactList() returns error? {
+    ContactListDetails details = check ses->getContactList(MOCK_CONTACT_LIST_NAME);
+    test:assertTrue(details.contactListName is string);
+}
+
+@test:Config {groups: ["operations"]}
+function testListContactListsPagesThrough() returns error? {
+    stream<ContactList, Error?> contactLists = ses->listContactLists();
+    int count = 0;
+    check from ContactList _ in contactLists
+        do {
+            count += 1;
+        };
+    test:assertTrue(count >= 1, "expected at least one contact list");
+}
+
+@test:Config {groups: ["operations"]}
+function testListEmailIdentities() returns error? {
+    stream<IdentityInfo, Error?> identities = ses->listEmailIdentities({pageSize: 10});
+    IdentityInfo[] found = [];
+    check from IdentityInfo identity in identities
+        do {
+            found.push(identity);
+        };
+    test:assertTrue(found.length() >= 1, "expected at least one email identity");
+    test:assertTrue(found[0].identityName is string);
+}
+
+@test:Config {groups: ["operations"]}
+function testListEmailTemplates() returns error? {
+    stream<EmailTemplateMetadata, Error?> templates = ses->listEmailTemplates();
+    EmailTemplateMetadata[] found = [];
+    check from EmailTemplateMetadata template in templates
+        do {
+            found.push(template);
+        };
+    test:assertTrue(found.length() >= 1, "expected at least one email template");
+}
+
+@test:Config {groups: ["operations"]}
+function testGetEmailIdentity() returns error? {
+    EmailIdentityDetails identity = check ses->getEmailIdentity(MOCK_SENDER_EMAIL);
+    test:assertTrue(identity.verificationStatus is VerificationStatus);
+}
+
+@test:Config {groups: ["operations"]}
+function testGetEmailTemplate() returns error? {
+    EmailTemplateDetails template = check ses->getEmailTemplate(MOCK_TEMPLATE_NAME);
+    EmailTemplateContent content = check template.templateContent.ensureType();
+    test:assertTrue(content.subject is string);
+}
+
+@test:Config {groups: ["operations"]}
+function testGetCustomVerificationEmailTemplate() returns error? {
+    CustomVerificationEmailTemplateDetails template =
+        check ses->getCustomVerificationEmailTemplate(MOCK_VERIFICATION_TEMPLATE_NAME);
+    test:assertTrue(template.fromEmailAddress is string);
+}
+
+@test:Config {groups: ["operations"]}
+function testSendEmail() returns error? {
+    SendEmailOutput result = check ses->sendEmail({
+        fromEmailAddress: MOCK_SENDER_EMAIL,
+        destination: {toAddresses: [MOCK_RECIPIENT_EMAIL]},
+        content: {
+            simple: {
+                subject: {data: "Ballerina SES connector test"},
+                body: {
+                    html: {data: "<html><body><p>Sent by the Ballerina SES connector tests.</p></body></html>"},
+                    text: {data: "Sent by the Ballerina SES connector tests."}
+                }
             }
         }
-    };
-    BulkEmailResponse|error response =  amazonSesClient->sendBulkEmail(req);
-    if response is BulkEmailResponse {
-        log:printInfo(response?.BulkEmailEntryResults.toString());
+    });
+    test:assertTrue(result.messageId is string);
+}
+
+@test:Config {groups: ["operations"]}
+function testSendBulkEmail() returns error? {
+    SendBulkEmailOutput result = check ses->sendBulkEmail({
+        fromEmailAddress: MOCK_SENDER_EMAIL,
+        defaultContent: {
+            template: {templateName: MOCK_TEMPLATE_NAME, templateData: "{\"orderId\":\"1\"}"}
+        },
+        bulkEmailEntries: [{destination: {toAddresses: [MOCK_RECIPIENT_EMAIL]}}]
+    });
+    test:assertTrue(result.bulkEmailEntryResults.length() >= 1);
+}
+
+// ---------------------------------------------------------------------------
+// Mock-only — what only the mock can observe about the request on the wire
+// ---------------------------------------------------------------------------
+
+@test:Config {groups: ["mock"]}
+function testRequestIsSignedWithSigV4() returns error? {
+    _ = check ses->getContactList(MOCK_CONTACT_LIST_NAME);
+    RecordedRequest request = getLastRequest();
+    test:assertTrue(request.authorization.startsWith("AWS4-HMAC-SHA256 "),
+            string `expected a SigV4 Authorization header, found: ${request.authorization}`);
+    // The credential scope names the signing service, which for SES is `ses` even though the endpoint is `email`.
+    test:assertTrue(request.authorization.includes("/ses/aws4_request"),
+            "expected the credential scope to name the `ses` signing service");
+    test:assertTrue(request.authorization.includes("SignedHeaders="));
+    test:assertTrue(request.authorization.includes("Signature="));
+}
+
+@test:Config {groups: ["mock"]}
+function testGetRequestCarriesNoContentType() returns error? {
+    _ = check ses->getContactList(MOCK_CONTACT_LIST_NAME);
+    RecordedRequest request = getLastRequest();
+    test:assertEquals(request.method, "GET");
+    // A `content-type` that was not signed would break the signature, so a body-less request must not carry one.
+    test:assertEquals(request.contentType, "");
+    test:assertEquals(request.payload, "");
+}
+
+@test:Config {groups: ["mock"]}
+function testPostRequestCarriesJsonContentType() returns error? {
+    check ses->createContactList({contactListName: MOCK_CONTACT_LIST_NAME, description: "test"});
+    RecordedRequest request = getLastRequest();
+    test:assertEquals(request.method, "POST");
+    test:assertEquals(request.contentType, "application/json");
+    test:assertEquals(request.rawPath, "/v2/email/contact-lists");
+    test:assertEquals(request.payload,
+            string `{"ContactListName":"${MOCK_CONTACT_LIST_NAME}", "Description":"test"}`);
+}
+
+@test:Config {groups: ["mock"]}
+function testPathParametersArePercentEncoded() returns error? {
+    // An email address carries `@`, and may carry `+` — both have to be encoded, or the signature will not match
+    // the request the service receives.
+    _ = check ses->getContact(MOCK_CONTACT_LIST_NAME, MOCK_CONTACT_EMAIL);
+    RecordedRequest request = getLastRequest();
+    test:assertEquals(request.rawPath, string `/v2/email/contact-lists/${MOCK_CONTACT_LIST_NAME}` +
+            "/contacts/reader%2Bballerina%40example.com");
+}
+
+@test:Config {groups: ["mock"]}
+function testListContactsUsesPostToListSubResource() returns error? {
+    stream<Contact, Error?> contacts = ses->listContacts(MOCK_CONTACT_LIST_NAME, {
+        filter: {filteredStatus: OPT_IN}
+    });
+    Contact[] found = [];
+    check from Contact contact in contacts
+        do {
+            found.push(contact);
+        };
+    RecordedRequest request = getLastRequest();
+    // `ListContacts` is the one list operation that is a POST with a body; 2.x sent a GET, which SES rejects.
+    test:assertEquals(request.method, "POST");
+    test:assertEquals(request.rawPath, string `/v2/email/contact-lists/${MOCK_CONTACT_LIST_NAME}/contacts/list`);
+    test:assertTrue(request.payload.includes("\"Filter\""));
+    test:assertTrue(request.payload.includes("\"FilteredStatus\":\"OPT_IN\""));
+    test:assertEquals(found.length(), 1);
+    test:assertEquals(found[0].emailAddress, MOCK_RECIPIENT_EMAIL);
+}
+
+@test:Config {groups: ["mock"]}
+function testListPaginatesAcrossPagesIncludingAnEmptyOne() returns error? {
+    resetMock();
+    stream<ContactList, Error?> contactLists = ses->listContactLists();
+    string[] names = [];
+    check from ContactList contactList in contactLists
+        do {
+            names.push(contactList.contactListName ?: "");
+        };
+    // Three pages are served, the second empty but still carrying a continuation token. An empty page must neither
+    // end the iteration nor be indexed into.
+    test:assertEquals(names, ["list-one", "list-two"]);
+    test:assertEquals(getLastRequest().callCount, 3);
+}
+
+@test:Config {groups: ["mock"]}
+function testPageSizeIsSentAsAQueryParameter() returns error? {
+    stream<EmailTemplateMetadata, Error?> templates = ses->listEmailTemplates({pageSize: 7});
+    check from EmailTemplateMetadata _ in templates
+        do {
+        };
+    test:assertEquals(getLastRequest().rawPath, "/v2/email/templates?PageSize=7");
+}
+
+@test:Config {groups: ["mock"]}
+function testDeleteUsesDeleteMethod() returns error? {
+    check ses->deleteEmailTemplate(MOCK_TEMPLATE_NAME);
+    RecordedRequest request = getLastRequest();
+    test:assertEquals(request.method, "DELETE");
+    test:assertEquals(request.rawPath, string `/v2/email/templates/${MOCK_TEMPLATE_NAME}`);
+}
+
+@test:Config {groups: ["mock"]}
+function testSendEmailPostsToOutboundEmails() returns error? {
+    _ = check ses->sendEmail({
+        fromEmailAddress: MOCK_SENDER_EMAIL,
+        destination: {toAddresses: [MOCK_RECIPIENT_EMAIL]},
+        content: {simple: {subject: {data: "Hello"}, body: {text: {data: "Hello"}}}}
+    });
+    RecordedRequest request = getLastRequest();
+    test:assertEquals(request.rawPath, "/v2/email/outbound-emails");
+    test:assertTrue(request.payload.includes("\"Simple\""));
+    test:assertTrue(request.payload.includes("\"Text\""));
+}
+
+@test:Config {groups: ["mock"]}
+function testServiceFailureIsMappedToError() {
+    EmailIdentityDetails|Error result = ses->getEmailIdentity("unknown@example.com");
+    if result is EmailIdentityDetails {
+        test:assertFail("expected the operation to fail with a 404");
     }
+    test:assertEquals(result.message(), "The Amazon SES operation failed with status 404");
+    aws:ErrorDetails detail = result.detail();
+    test:assertEquals(detail.httpStatusCode, 404);
+    test:assertEquals(detail.requestId, "mock-request-id");
+    // `restJson1` reports the exception in the `x-amzn-errortype` header and its description in the body, so both
+    // reach the caller as typed detail rather than as a blob to substring-match.
+    test:assertEquals(detail.errorCode, "NotFoundException");
+    test:assertEquals(detail.errorMessage, "Email identity unknown@example.com not found.");
 }
 
-@test:AfterSuite {}
-function testDeleteEmailTemplate() returns error? {
-    log:printInfo("Testing DeleteEmailTemplate");
-    check amazonSesClient->deleteEmailTemplate(emailTemplateName);
+@test:Config {groups: ["mock"]}
+function testInitAcceptsAPlainRegionString() returns error? {
+    // `region` is `aws:Region|string`, so a region the enum does not yet know about still works.
+    Client sesClient = check new ({
+        auth: {accessKeyId: MOCK_ACCESS_KEY_ID, secretAccessKey: MOCK_SECRET_ACCESS_KEY},
+        region: "us-west-2",
+        endpoint: {customEndpoint: MOCK_ENDPOINT}
+    });
+    _ = check sesClient->getContactList(MOCK_CONTACT_LIST_NAME);
+    test:assertTrue(getLastRequest().authorization.includes("/us-west-2/ses/aws4_request"),
+            "the credential scope must name the region the client was configured with");
+    check sesClient.close();
 }
 
-@test:AfterSuite {}
-function testDeleteContactList() returns error? {
-    log:printInfo("Testing DeleteContactList");
-    check amazonSesClient-> deleteContactList(contactListName);
+@test:Config {groups: ["mock"]}
+function testInitWithDefaultCredentialsChain() returns error? {
+    // The default provider chain resolves at init, so an environment with no credentials reports it here rather
+    // than at the first request.
+    Client|error result = new ({
+        auth: auth:DEFAULT_CREDENTIALS,
+        region: aws:US_EAST_1,
+        endpoint: {customEndpoint: MOCK_ENDPOINT}
+    });
+    if result is error {
+        test:assertTrue(result.message().includes("credential") || result.message().includes("Credential"),
+                string `an init failure here must be a credential resolution failure, found: ${result.message()}`);
+        return;
+    }
+    // Where the environment does supply credentials, the chain resolves and the provider's refresh threads have to
+    // be released — the suite's `AfterSuite` only closes the shared client, not this one.
+    check result.close();
+}
+
+@test:Config {groups: ["mock"]}
+function testCloseReleasesTheCredentialProvider() returns error? {
+    Client sesClient = check newMockClient();
+    check sesClient.close();
+}
+
+@test:Config {groups: ["live"], enable: isLiveServer}
+function testLiveListEmailIdentities() returns error? {
+    Client sesClient = check newLiveClient();
+    stream<IdentityInfo, Error?> identities = sesClient->listEmailIdentities({pageSize: 10});
+    int count = 0;
+    check from IdentityInfo identity in identities
+        do {
+            test:assertTrue(identity.identityName is string);
+            count += 1;
+        };
+    test:assertTrue(count >= 1, "the account is expected to have at least one email identity");
+    check sesClient.close();
+}
+
+@test:Config {groups: ["live"], enable: isLiveServer}
+function testLiveSendEmail() returns error? {
+    Client sesClient = check newLiveClient();
+    SendEmailOutput result = check sesClient->sendEmail({
+        fromEmailAddress: senderEmail,
+        destination: {toAddresses: [recipientEmail]},
+        content: {
+            simple: {
+                subject: {data: "Ballerina SES connector test", charset: "UTF-8"},
+                body: {
+                    html: {data: "<html><body><p>Sent by the Ballerina SES connector tests.</p></body></html>"},
+                    text: {data: "Sent by the Ballerina SES connector tests."}
+                }
+            }
+        }
+    });
+    test:assertTrue(result.messageId is string, "Amazon SES must return a message id for an accepted message");
+    check sesClient.close();
 }
