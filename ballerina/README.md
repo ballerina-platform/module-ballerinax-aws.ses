@@ -12,7 +12,7 @@ The Amazon SES connector offers APIs to connect and interact with the [Amazon SE
 - Manage contact lists, contacts, and topics, with subscription filtering and unsubscribe-link support through list management options
 - Manage email templates and custom verification email templates
 - Auto-paginating streams over every list operation, so results beyond the first page are reachable
-- Flexible credential configuration: static keys, AWS credentials file profiles, STS assume-role, web identity (OIDC), IAM Identity Center (SSO), an external credential process, or the default AWS credential provider chain (EKS Pod Identity, ECS task roles, EC2 instance profiles, environment variables)
+- Flexible credential configuration: static keys, AWS credentials file profiles, STS assume-role, web identity (OIDC), IAM Identity Center (SSO), an external credential process, or the default AWS credential provider chain
 - Automatic refresh of expiring temporary credentials
 - FIPS, dualstack, and custom endpoint support
 
