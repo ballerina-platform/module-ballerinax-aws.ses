@@ -75,10 +75,7 @@ task commitTomlFiles {
 }
 
 clean {
-    def folder = file('build')
-    if( folder.exists() ) {
-        delete 'build'
-    }
+    delete 'build'
 }
 
 publishToMavenLocal.dependsOn build
