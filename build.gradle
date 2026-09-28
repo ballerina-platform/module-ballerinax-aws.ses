@@ -17,7 +17,7 @@
 
 plugins {
     id 'com.github.spotbugs-base'
-    id 'com.github.johnrengelman.shadow'
+    id 'com.gradleup.shadow'
     id 'de.undercouch.download'
     id 'net.researchgate.release'
 }
@@ -61,9 +61,16 @@ allprojects {
 
 def moduleVersion = project.version.replace("-SNAPSHOT", "")
 
-task build {
-    dependsOn(':aws.ses-ballerina:build')
-    dependsOn(':aws.ses-examples:build')
+if (tasks.names.contains('build')) {
+    tasks.named('build') {
+        dependsOn(':aws.ses-ballerina:build')
+        dependsOn(':aws.ses-examples:build')
+    }
+} else {
+    tasks.register('build') {
+        dependsOn(':aws.ses-ballerina:build')
+        dependsOn(':aws.ses-examples:build')
+    }
 }
 
 release {
